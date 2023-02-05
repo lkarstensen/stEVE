@@ -1,3 +1,15 @@
+## Custom
+
+# Mac
+.DS_Store
+
+#test-files
+test*.py
+
+# VMR Data
+*vmr/
+
+## Github Python Template:
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -72,7 +84,7 @@ instance/
 docs/_build/
 
 # PyBuilder
-target/
+#target/ #Will prohibit our target selection classes
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -127,3 +139,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
