@@ -224,7 +224,7 @@ class SOFACore:
         )
         nx = 0
         for device in self.devices:
-            nx = max([nx, sum(device.density_of_beams) + 1])
+            nx = sum([nx, sum(device.density_of_beams)])
 
         instrument_combined.addObject(
             "RegularGridTopology",
