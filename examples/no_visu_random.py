@@ -18,12 +18,10 @@ if __name__ == "__main__":
 
     position = eve.observation.Tracking(simulation, n_points=5)
     position = eve.observation.wrapper.RelativeToFirstRow(position)
-    position = eve.observation.wrapper.CoordinatesTo2D(position, dim_to_delete="y")
+    position = eve.observation.wrapper.ToTrackingCS(position, dim_to_delete="y")
     # position = eve.state.wrapper.Normalize(position)
     target_state = eve.observation.Target(target)
-    target_state = eve.observation.wrapper.CoordinatesTo2D(
-        target_state, dim_to_delete="y"
-    )
+    target_state = eve.observation.wrapper.ToTrackingCS(target_state, dim_to_delete="y")
     target_state = eve.observation.wrapper.Normalize(target_state)
     rotation = eve.observation.Rotations(simulation)
     state = eve.observation.ObsDict([position, target_state, rotation])

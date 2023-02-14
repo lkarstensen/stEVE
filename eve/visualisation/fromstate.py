@@ -16,7 +16,7 @@ class FromState(Visualisation):
         self.image_state = image_state
         plt.pause(0.1)
 
-    def step(self):
+    def render(self):
         self.ax.clear()
         image = self.image_state.image
         self.ax.imshow(image, cmap="gray", vmin=0, vmax=255)

@@ -29,15 +29,17 @@ class BinaryImage:
     def draw_branch(self, centerline_branch: Branch):
         draw = ImageDraw.Draw(self.image)
 
-        for centerline_point in centerline_branch.centerline_points:
+        for coords, radius in zip(
+            centerline_branch.coordinates, centerline_branch.radii
+        ):
             if self.dimension_to_omit == "x":
-                point = np.array([centerline_point.y, centerline_point.z])
+                point = np.array([coords[1], coords[2]])
             if self.dimension_to_omit == "z":
-                point = np.array([centerline_point.x, centerline_point.y])
+                point = np.array([coords[0], coords[1]])
             else:
-                point = np.array([centerline_point.x, centerline_point.z])
+                point = np.array([coords[0], coords[2]])
             position = self._coord_to_image(point)
-            radius = np.floor(centerline_point.radius / self.spacing)
+            radius = np.floor(radius / self.spacing)
 
             circle_bb_low = tuple([coord - radius for coord in position])
             circle_bb_high = tuple([coord + radius for coord in position])
@@ -55,7 +57,9 @@ class BinaryImage:
 def create_empty_binary_image_from_centerlinetree(
     centerline_tree: VesselTree, spacing: float, dimension_to_omit: str
 ) -> BinaryImage:
-    axes_length = centerline_tree.high - centerline_tree.low
+    axes_length = (
+        centerline_tree.coordinate_space.high - centerline_tree.coordinate_space.low
+    )
     if dimension_to_omit == "x":
         axes_length = [axes_length.y, axes_length.z]
         world_offset = np.array([centerline_tree.low.y, centerline_tree.low.z])
@@ -63,8 +67,13 @@ def create_empty_binary_image_from_centerlinetree(
         axes_length = [axes_length.x, axes_length.y]
         world_offset = np.array([centerline_tree.low.x, centerline_tree.low.y])
     else:
-        axes_length = [axes_length.x, axes_length.z]
-        world_offset = np.array([centerline_tree.low.x, centerline_tree.low.z])
+        axes_length = [axes_length[0], axes_length[2]]
+        world_offset = np.array(
+            [
+                centerline_tree.coordinate_space.low[0],
+                centerline_tree.coordinate_space.low[2],
+            ]
+        )
     shape = np.ceil(np.array(axes_length) / spacing).astype(int)
 
     # margin left and right for each dimension
@@ -149,7 +158,7 @@ def create_walls_from_vessel_tree(
         dimension_to_omit=dimension_to_omit,
     )
 
-    for branch in vessel_tree.centerline_tree.branches:
+    for branch in vessel_tree.branches:
         binary_image.draw_branch(branch)
 
     contours = get_contours_from_binary_image(

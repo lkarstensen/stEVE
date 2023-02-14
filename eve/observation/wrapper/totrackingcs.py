@@ -1,36 +1,27 @@
-from ..observation import Observation, gym
-
 from typing import Optional
 
-import numpy as np
+from ...intervention import Intervention
+from ..observation import Observation, gym
 
 
-class CoordinatesTo2D(Observation):
+class ToTrackingCS(Observation):
     def __init__(
         self,
         wrapped_obs: Observation,
-        dim_to_delete: str,
+        intervention: Intervention,
         name: Optional[str] = None,
     ) -> None:
         name = name or wrapped_obs.name
         super().__init__(name)
-        self.dim_to_delete = dim_to_delete
-        if dim_to_delete == "y":
-            self._delete_idx = 1
-        elif dim_to_delete == "z":
-            self._delete_idx = 2
-        elif dim_to_delete == "x":
-            self._delete_idx = 0
-        else:
-            raise ValueError(f"{dim_to_delete = } is invalid. Needs to be x,y or z")
+        self.intervention = intervention
         self.wrapped_obs = wrapped_obs
 
     @property
     def space(self) -> gym.spaces.Box:
         high = self.wrapped_obs.space.high
-        high = np.delete(high, self._delete_idx, axis=-1)
+        high = self.intervention.vessel_cs_to_tracking_cs(high)
         low = self.wrapped_obs.space.low
-        low = np.delete(low, self._delete_idx, axis=-1)
+        low = self.intervention.vessel_cs_to_tracking_cs(low)
         return gym.spaces.Box(low=low, high=high)
 
     def step(self) -> None:
@@ -43,5 +34,5 @@ class CoordinatesTo2D(Observation):
 
     def _get_obs(self):
         obs = self.wrapped_obs.obs
-        obs = np.delete(obs, self._delete_idx, axis=-1)
+        obs = self.intervention.vessel_cs_to_tracking_cs(obs)
         self.obs = obs

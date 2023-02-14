@@ -2,7 +2,7 @@ from eve.util.binaryimage import create_walls_from_vessel_tree
 from .visualisation import Visualisation
 
 from ..vesseltree import VesselTree
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 from ..interimtarget import InterimTarget
 from ..target import Target
 import matplotlib.pyplot as plt
@@ -34,7 +34,7 @@ class PLT2D(Visualisation):
         self.dimension_to_omit = dimension_to_omit
         self._colors = ["black", "orange", "green", "blue"]
 
-    def step(self) -> None:
+    def render(self) -> None:
         self._render()
         plt.draw()
         plt.pause(0.0001)
@@ -45,7 +45,7 @@ class PLT2D(Visualisation):
             self._init_vessel_tree()
             self._centerline_tree = self.vessel_tree.centerline_tree
         self._init_targets()
-        self.step()
+        self.render()
 
     def close(self):
         plt.close(self.fig)
@@ -96,7 +96,7 @@ class PLT2D(Visualisation):
             artist.remove()
         self.artists = []
 
-        trackings = self.intervention.tracking_per_device
+        trackings = self.intervention.device_trackings
         for i in range(len(trackings)):
             trackings[i] = [
                 trackings[i],

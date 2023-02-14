@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Tuple, Union
 import numpy as np
-from .device3d import NonProceduralShape
+from .device import NonProceduralShape
 from .linemeshgenerator import save_line_mesh
 from ...vesseltree.util.meshing import get_temp_mesh_path
 

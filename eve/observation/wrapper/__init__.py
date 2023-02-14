@@ -6,7 +6,7 @@ class MemoryResetMode(int, Enum):
     ZERO = 1
 
 
-from .coordinatesto2d import CoordinatesTo2D
+from .totrackingcs import ToTrackingCS
 from .memory import Memory
 from .normalize import Normalize
 from .normalizecustom import NormalizeCustom

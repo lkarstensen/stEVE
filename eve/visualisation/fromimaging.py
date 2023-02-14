@@ -18,7 +18,7 @@ class FromImaging(Visualisation):
         self.fig.canvas.draw()
         plt.pause(0.1)
 
-    def step(self):
+    def render(self):
         self.ax.clear()
         image = self.imaging.image
         self.ax.imshow(image, cmap="gray", vmin=0, vmax=255)

@@ -3,7 +3,7 @@ import gymnasium as gym
 
 from .interimtarget import InterimTarget, Target
 from ..pathfinder import Pathfinder
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 
 
 class Even(InterimTarget):
@@ -25,7 +25,7 @@ class Even(InterimTarget):
         return self.pathfinder.coordinate_space
 
     def step(self) -> None:
-        position = self.intervention.tracking_ground_truth[0]
+        position = self.intervention.instrument_position_vessel_cs[0]
         position_to_target = self.all_coordinates[0] - position
         dist = np.linalg.norm(position_to_target)
         if dist < self.threshold:

@@ -1,5 +1,7 @@
 from eve.vesseltree.util.vmrdownload import download_vmr_files
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
 # Add all VMR Models that are useful for this project:
 models = [

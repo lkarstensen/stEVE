@@ -1,11 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Tuple, Union
 
-from ...intervention import Device
-
 
 @dataclass(frozen=True, init=False)
-class Device3D(Device):
+class Device:
     """A container for alle the data necessary to create a WireRestShape in SOFA BeamAdapter
 
     Args:
@@ -58,7 +56,7 @@ class Device3D(Device):
 
 
 @dataclass(frozen=True)
-class ProceduralShape(Device3D):
+class ProceduralShape(Device):
     """A container for alle the data necessary to create a procedural WireRestShape in SOFA BeamAdapter
 
     Args:
@@ -89,7 +87,7 @@ class ProceduralShape(Device3D):
 
 
 @dataclass(frozen=True)
-class NonProceduralShape(Device3D):
+class NonProceduralShape(Device):
     """A container for alle the data necessary to create a non-procedural WireRestShape in SOFA BeamAdapter
 
     Args:

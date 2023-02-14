@@ -2,7 +2,7 @@ from typing import Optional
 import numpy as np
 
 from ..observation import Observation, gym
-from ...intervention import Intervention
+from ...intervention.intervention import Intervention
 
 
 class RelativeToTip(Observation):

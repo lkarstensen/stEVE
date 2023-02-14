@@ -4,7 +4,7 @@ from ..util import EveObject
 
 class Visualisation(EveObject, ABC):
     @abstractmethod
-    def step(self) -> None:
+    def render(self) -> None:
         ...
 
     @abstractmethod

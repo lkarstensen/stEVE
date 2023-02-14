@@ -1,7 +1,8 @@
 from . import (
-    # imaging,
+    imaging,
     info,
     interimtarget,
+    intervention,
     pathfinder,
     reward,
     start,

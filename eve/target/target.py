@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import gymnasium as gym
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 
 from ..util import EveObject
 
@@ -24,7 +24,7 @@ class Target(EveObject, ABC):
         ...
 
     def step(self) -> None:
-        position = self.intervention.tracking_ground_truth[0]
+        position = self.intervention.instrument_position_vessel_cs[0]
         position_to_target = self.coordinates - position
         if np.linalg.norm(position_to_target) < self.threshold:
             self.reached = True

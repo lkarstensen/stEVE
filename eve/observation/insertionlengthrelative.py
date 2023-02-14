@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..intervention import Intervention, Device
+from ..intervention.intervention import Intervention, Device
 from .observation import Observation, gym
 
 

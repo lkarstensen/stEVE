@@ -1,10 +1,7 @@
 from dataclasses import dataclass
 from typing import Tuple
-import numpy as np
-
 from typing import List
 from scipy.interpolate import CubicHermiteSpline
-
 import numpy as np
 
 

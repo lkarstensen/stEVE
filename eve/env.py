@@ -6,14 +6,14 @@ from .interimtarget import InterimTarget, InterimTargetDummy
 from .pathfinder import Pathfinder, PathfinderDummy
 from .intervention import Intervention
 from .success import Success
-from .start import Start
 from .target import Target
+from .start import Start
 from .visualisation import Visualisation, VisualisationDummy
 from .vesseltree import VesselTree
 from .observation import Observation
 from .reward import Reward
 from .terminal import Terminal
-from .truncation import Truncation
+from .truncation import Truncation, TruncationDummy
 from .info import Info, InfoDummy
 from .imaging import Imaging, ImagingDummy
 
@@ -24,7 +24,6 @@ ObsType = TypeVar(
     Tuple[Union[np.ndarray, Dict[str, np.ndarray]]],
     Dict[str, np.ndarray],
 )
-ActType = TypeVar("ActType", np.ndarray, Dict[str, np.ndarray])
 RenderFrame = TypeVar("RenderFrame")
 
 
@@ -33,13 +32,13 @@ class Env(gym.Env):
         self,
         vessel_tree: VesselTree,
         intervention: Intervention,
-        start: Start,
         target: Target,
+        start: Start,
         success: Success,
         observation: Observation,
         reward: Reward,
         terminal: Terminal,
-        truncation: Truncation,
+        truncation: Optional[Truncation],
         info: Optional[Info] = None,
         imaging: Optional[Imaging] = None,
         pathfinder: Optional[Pathfinder] = None,
@@ -50,12 +49,12 @@ class Env(gym.Env):
         self.vessel_tree = vessel_tree
         self.intervention = intervention
         self.success = success
-        self.start = start
         self.target = target
+        self.start = start
         self.observation = observation
         self.reward = reward
         self.terminal = terminal
-        self.truncation = truncation
+        self.truncation = truncation or TruncationDummy()
         self.info = info or InfoDummy()
         self.imaging = imaging or ImagingDummy()
         self.pathfinder = pathfinder or PathfinderDummy()
@@ -73,7 +72,7 @@ class Env(gym.Env):
         return self.intervention.action_space
 
     def step(
-        self, action: ActType
+        self, action: np.ndarray
     ) -> tuple[ObsType, float, bool, bool, dict[str, Any]]:
         self.vessel_tree.step()
         self.intervention.step(action)
@@ -86,7 +85,6 @@ class Env(gym.Env):
         self.reward.step()
         self.terminal.step()
         self.info.step()
-        self.visualisation.step()
         return (
             self.observation(),
             self.reward.reward,
@@ -119,7 +117,7 @@ class Env(gym.Env):
         return self.observation()
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
-        self.visualisation.step()
+        self.visualisation.render()
 
     def close(self):
         self.intervention.close()

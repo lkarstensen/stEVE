@@ -1,27 +1,21 @@
-from .imaging import Imaging, Image
+import numpy as np
+from .imaging import Imaging, gym
 
 
 class Dummy(Imaging):
     def __init__(self, *args, **kwargs) -> None:
-        self.image_size = (1, 1)
+        ...
 
     @property
-    def image(self) -> Image.Image:
-        return Image.new("L", (1, 1))
+    def image_space(self) -> gym.Space:
+        gym.spaces.Box(1, 1, (1, 1), dtype=np.uint8)
 
     @property
-    def pixel_bits(self) -> str:
-        1
+    def x_ray_image(self) -> np.ndarray:
+        return np.array([[1]], dtype=np.uint8)
 
-    @property
-    def pixel_bands(self) -> str:
-        1
-
-    def step(self, *args, **kwargs):
+    def step(self) -> None:
         ...
 
     def reset(self, episode_nr: int = 0) -> None:
-        ...
-
-    def close(self):
         ...

@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..intervention import Intervention, gym
+from ..intervention.intervention import Intervention, gym
 from . import Tracking
 
 
@@ -24,7 +24,7 @@ class TrackingAllDevices(Tracking):
         return gym.spaces.Box(low=low, high=high, dtype=np.float32)
 
     def _calculate_tracking_state(self) -> np.ndarray:
-        trackings = self.intervention.tracking_per_device
+        trackings = self.intervention.device_trackings
         state_per_device = []
         for i, tracking in enumerate(trackings):
             inserted_length = self.intervention.device_lengths_inserted[i]

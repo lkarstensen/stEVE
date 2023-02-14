@@ -1,7 +1,7 @@
 import numpy as np
 
 from .reward import Reward
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 from ..target import Target
 
 
@@ -16,7 +16,7 @@ class TipToTargetDistDelta(Reward):
         self._last_target = None
 
     def step(self) -> None:
-        tip = self.intervention.tracking_ground_truth[0]
+        tip = self.intervention.instrument_position_vessel_cs[0]
         target = self.target.coordinates
         dist = np.linalg.norm(tip - target)
 
@@ -30,7 +30,7 @@ class TipToTargetDistDelta(Reward):
 
     def reset(self, episode_nr: int = 0) -> None:
         self.reward = 0.0
-        tip = self.intervention.tracking_ground_truth[0]
+        tip = self.intervention.instrument_position_vessel_cs[0]
         target = self.target.coordinates
         dist = np.linalg.norm(tip - target)
         self._last_dist = dist

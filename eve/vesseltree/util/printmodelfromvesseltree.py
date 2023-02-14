@@ -158,14 +158,14 @@ def extend_branch_end(branch: Branch, start_end: str, length: int):
 
     new_radii = np.ones([n_points]) * radius
 
-    if start_end == "start":
-        new_coordinates = np.vstack([new_points, branch.coordinates])
-        new_radii = np.concatenate([new_radii, branch.radii], axis=0)
-    else:
-        new_coordinates = np.vstack([branch.coordinates, new_points])
-        new_radii = np.concatenate([branch.radii, new_radii], axis=0)
+    # if start_end == "start":
+    #     new_coordinates = np.vstack([new_points, branch.coordinates])
+    #     new_radii = np.concatenate([new_radii, branch.radii], axis=0)
+    # else:
+    #     new_coordinates = np.vstack([branch.coordinates, new_points])
+    #     new_radii = np.concatenate([branch.radii, new_radii], axis=0)
 
-    return Branch(branch.name, new_coordinates, new_radii)
+    return Branch(branch.name, new_points, new_radii)
 
 
 def make_printable_vmr(rot_z: float, rot_x: float, vmr_folder: str, z_split: float):
@@ -209,17 +209,22 @@ def make_printable_vmr(rot_z: float, rot_x: float, vmr_folder: str, z_split: flo
 
     print(f"time: {perf_counter()-start}")
 
-    new_branches = []
+    end_extensions = []
 
     for branch in arch:
 
         new_branch = extend_branch_end(branch, "end", 6)
-        if branch.name == "aorta":
-            new_branch = extend_branch_end(new_branch, "start", 6)
-        new_branches.append(new_branch)
+        end_extensions.append(new_branch)
 
-    for branch in new_branches:
-        wall_model.mark_centerline_in_array(branch, marking_value=0, custom_radius=1.6)
+        if branch.name == "aorta":
+            new_branch = extend_branch_end(branch, "start", 6)
+            end_extensions.append(new_branch)
+
+    for branch in end_extensions:
+        radius = 5 if branch.name == "aorta" else 2.5
+        wall_model.mark_centerline_in_array(
+            branch, marking_value=0, custom_radius=radius
+        )
 
     wall_model.gaussian_smooth(1)
     wall_model.gaussian_smooth(1)
@@ -227,9 +232,10 @@ def make_printable_vmr(rot_z: float, rot_x: float, vmr_folder: str, z_split: flo
 
     mesh = get_surface_mesh(wall_model, "ascent")
     mesh = mesh.decimate(0.9, inplace=True)
+    cwd = os.getcwd()
     save_mesh(
         mesh,
-        f"/Users/lennartkarstensen/stacie/eve/{patient}_printmesh_full_{rot_z=}_{rot_x=}.obj",
+        os.path.join(cwd, f"{patient}_printmesh_full_{rot_z=}_{rot_x=}.obj"),
     )
 
     z_split_idx = int(z_split / wall_model.spacing[2])
@@ -252,12 +258,12 @@ def make_printable_vmr(rot_z: float, rot_x: float, vmr_folder: str, z_split: flo
     mesh.decimate(0.9, inplace=True)
     save_mesh(
         mesh,
-        f"/Users/lennartkarstensen/stacie/eve/{patient}_printmesh_lower_{rot_z=}_{rot_x=}.obj",
+        os.path.join(cwd, f"{patient}_printmesh_lower_{rot_z=}_{rot_x=}.obj"),
     )
 
     mesh = get_surface_mesh(upper_model, "ascent")
     mesh.decimate(0.9, inplace=True)
     save_mesh(
         mesh,
-        f"/Users/lennartkarstensen/stacie/eve/{patient}_printmesh_upper_{rot_z=}_{rot_x=}.obj",
+        os.path.join(cwd, f"{patient}_printmesh_upper_{rot_z=}_{rot_x=}.obj"),
     )

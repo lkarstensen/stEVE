@@ -1,34 +1,19 @@
 from math import cos, sin
 from typing import Tuple
-from OpenGL.GL import (
-    glClear,
-    glEnable,
-    glMatrixMode,
-    glLoadIdentity,
-    glMultMatrixd,
-    GL_COLOR_BUFFER_BIT,
-    GL_DEPTH_BUFFER_BIT,
-    GL_LIGHTING,
-    GL_DEPTH_TEST,
-    GL_PROJECTION,
-    GL_MODELVIEW,
-)
-from OpenGL.GLU import gluPerspective
-import pygame
-import Sofa
-import Sofa.SofaGL
+import importlib
 import numpy as np
+import pygame
 
 from .visualisation import Visualisation
-from ..simulation3d.simulation3d import Simulation3D
+from ..intervention import Intervention
 from ..interimtarget import InterimTarget, InterimTargetDummy
 from ..target import Target as TargetClass
 
-
+# TODO: Implement Target Plot
 class SofaPygame(Visualisation):
     def __init__(
         self,
-        intervention: Simulation3D,
+        intervention: Intervention,
         display_size: Tuple[float, float] = (1200, 860),
         interim_target: InterimTarget = None,
         target: TargetClass = None,
@@ -38,265 +23,124 @@ class SofaPygame(Visualisation):
         self.interim_target = interim_target or InterimTargetDummy()
         self.target = target
 
+        self.intervention.init_visual_nodes = True
+        self.intervention.display_size = display_size
+
         self.initial_orientation = None
         self._initialized = False
-        self._centerline_tree = None
-        self._interim_target_spheres = {}
-        self._main_target = None
-        self._interim_targets_node = None
-        self._camera = None
         self._theta_x = None
         self._theta_z = None
         self._initial_direction = None
         self._distance = None
-        self._field_of_view = None
-        self._z_near = None
-        self._z_far = None
+        self._sofa = importlib.import_module("Sofa")
+        self._sofa_gl = importlib.import_module("Sofa.SofaGL")
+        self._opengl_gl = importlib.import_module("OpenGL.GL")
+        self._opengl_glu = importlib.import_module("OpenGL.GLU")
 
-    def step(self) -> None:
-
-        visu_set = set(list(self._interim_target_spheres.keys()))
-        target_set = set(tuple(map(tuple, self.interim_target.all_coordinates)))
-        missing_targets = visu_set - target_set
-        for target in missing_targets:
-            sphere = self._interim_target_spheres.pop(target)
-            sphere.removeObject(sphere.OglModel)
-            self._interim_targets_node.removeChild(sphere)
-
-        if self.initial_orientation is None:
-
-            self.initial_orientation = np.array(
-                [
-                    self._camera.orientation[3],
-                    self._camera.orientation[0],
-                    self._camera.orientation[1],
-                    self._camera.orientation[2],
-                ]
-            )
-
-        Sofa.Simulation.updateVisual(self.intervention.root)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_DEPTH_TEST)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(
-            self._field_of_view,
-            (self.display_size[0] / self.display_size[1]),
-            self._z_near,
-            self._z_far,
+    def render(self) -> None:
+        self._sofa.Simulation.updateVisual(self.intervention.sofa_root)
+        gl = self._opengl_gl
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glEnable(gl.GL_LIGHTING)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        camera = self.intervention.sofa_camera
+        width = camera.widthViewport.value
+        height = camera.heightViewport.value
+        self._opengl_glu.gluPerspective(
+            camera.fieldOfView.value,
+            (width / height),
+            camera.zNear.value,
+            camera.zFar.value,
         )
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
 
-        camera_mvm = self._camera.getOpenGLModelViewMatrix()
-        glMultMatrixd(camera_mvm)
-        Sofa.SofaGL.draw(self.intervention.root)
+        camera_mvm = camera.getOpenGLModelViewMatrix()
+        gl.glMultMatrixd(camera_mvm)
+        self._sofa_gl.draw(self.intervention.sofa_root)
+        gl = self._opengl_gl
+        height = camera.heightViewport.value
+        width = camera.widthViewport.value
 
-        pygame.display.get_surface().fill((0, 0, 0))
+        buffer = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
+        image_array = np.fromstring(buffer, np.uint8)
+
+        if image_array != []:
+            image = image_array.reshape(height, width, 3)
+            image = np.flipud(image)[:, :, :3]
+        else:
+            image = np.zeros((height, width, 3))
         pygame.display.flip()
-        pygame.event.get()
+        return np.copy(image)
 
     def reset(self, episode_nr: int = 0) -> None:
+        # pylint: disable=no-member
 
-        targets = list(self._interim_target_spheres.keys())
-        for target in targets:
-            sphere = self._interim_target_spheres.pop(target)
-            self._interim_targets_node.removeChild(sphere)
-        if self.intervention.initialized_last_reset:
-            self._main_target = None
-        if self._main_target is not None:
-            target_coord = self.target.coordinates.tolist()
-            self._main_target.ball.translation = target_coord
-            Sofa.Simulation.init(self._main_target)
+        pygame.display.init()
+        flags = pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE
+        pygame.display.set_mode(self.display_size, flags)
 
-        if not self._initialized or self.intervention.initialized_last_reset:
-            self._interim_target_spheres = {}
-            self.intervention.root.addObject("RequiredPlugin", name="SofaGeneralLoader")
-            self._interim_targets_node = self.intervention.root.addChild(
-                "InterimTargets"
-            )
-            self._interim_targets_node.addObject(
-                "MeshSTLLoader",
-                name="loader",
-                triangulate=True,
-                filename="/Users/lennartkarstensen/stacie/eve/eve/visualisation/meshes/unit_sphere.stl",
-                scale=self.interim_target.threshold,
-            )
-            self._interim_targets_node.addObject("MechanicalObject", src="@loader")
-
-        for i, interim_target in enumerate(self.interim_target.all_coordinates):
-            interim_target = tuple(interim_target)
-            target_node = self._interim_targets_node.addChild("target_" + str(i))
-
-            target_node.addObject(
-                "OglModel",
-                src="@../loader",
-                color=[0.5, 1.0, 1.0, 0.3],
-                translation=interim_target,
-            )
-            self._interim_target_spheres[interim_target] = target_node
-
-        if self.target is not None and self._main_target is None:
-            target_coord = tuple(self.target.coordinates)
-
-            target_node = self.intervention.root.addChild("main_target")
-            target_node.addObject(
-                "MeshSTLLoader",
-                name="loader",
-                triangulate=True,
-                filename="/Users/lennartkarstensen/stacie/eve/eve/visualisation/meshes/unit_sphere.stl",
-                scale=self.target.threshold,
-            )
-            target_node.addObject(
-                "MechanicalObject",
-                src="@loader",
-                translation=(
-                    target_coord[0],
-                    target_coord[1],
-                    target_coord[2] - self.target.threshold,
-                ),
-                template="Rigid3d",
-                name="ball",
-            )
-            target_node.addObject(
-                "OglModel",
-                src="@loader",
-                color=[0.5, 0.0, 0.0, 0.7],
-                # translation=target_coord,
-                name="ogl_model",
-            )
-            target_node.addObject("RigidMapping", input="@ball")
-            self._main_target = target_node
-        if not self._initialized or self.intervention.initialized_last_reset:
-            self.intervention.root.addObject(
-                "RequiredPlugin", name="SofaOpenglVisual"
-            )  # visual stuff
-            self.intervention.root.addObject(
-                "RequiredPlugin", name="SofaGeneralTopology"
-            )
-
-            self.intervention.root.addObject("RequiredPlugin", name="SofaSimpleFem")
-            self.intervention.root.addObject("DefaultVisualManagerLoop")
-            self.intervention.root.addObject(
-                "VisualStyle",
-                displayFlags="showVisualModels showBehaviorModels hideCollisionModels hideMappings showForceFields",
-            )
-            self.intervention.root.addObject("LightManager")
-            self.intervention.root.addObject("DirectionalLight", direction=[0, -1, 0])
-            self.intervention.root.addObject("DirectionalLight", direction=[0, 1, 0])
-            self.intervention.root.addObject("BackgroundSetting", color="0 0 0")
-
-            look_at = (
-                self.intervention.tracking_space.high
-                + self.intervention.tracking_space.low
-            ) * 0.5
-            distance_coefficient = 1.5
-            distance = (
-                np.linalg.norm(look_at - self.intervention.tracking_space.low)
-                * distance_coefficient
-            )
-            position = look_at + np.array([0.0, -distance, 0.0])
-
-            scene_radius = np.linalg.norm(
-                self.intervention.tracking_space.high
-                - self.intervention.tracking_space.low
-            )
-            dist_cam_to_center = np.linalg.norm(position - look_at)
-
-            z_clipping_coeff = 5
-            z_near_coeff = 0.01
-
-            z_near = dist_cam_to_center - scene_radius
-            z_far = (z_near + 2 * scene_radius) * 2
-            z_near = z_near * z_near_coeff
-
-            z_min = z_near_coeff * z_clipping_coeff * scene_radius
-
-            if z_near < z_min:
-                z_near = z_min
-
-            field_of_view = 70
-            look_at = np.array(look_at)
-            position = np.array(position)
-
-            self._camera = self.intervention.root.addObject(
-                "Camera",
-                name="camera",
-                lookAt=look_at,
-                position=position,
-                fieldOfView=field_of_view,
-                zNear=z_near,
-                zFar=z_far,
-                fixedLookAt=False,
-                # backgroundSetting="@BackgroundSetting",
-            )
-            self._theta_x = 0
-            self._theta_z = 0
-            self._initial_direction = position - look_at
-            self._initial_direction = self._initial_direction / np.linalg.norm(
-                self._initial_direction
-            )
-            self._distance = distance
-            self._field_of_view = field_of_view
-            self._z_near = z_near
-            self._z_far = z_far
-            pygame.display.init()
-            pygame.display.set_mode(
-                self.display_size,
-                pygame.DOUBLEBUF | pygame.OPENGL,  # pylint: disable=no-member
-            )
-
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            glEnable(GL_LIGHTING)
-            glEnable(GL_DEPTH_TEST)
-            Sofa.SofaGL.glewInit()
-            Sofa.Simulation.initVisual(self.intervention.root)
-            Sofa.Simulation.initTextures(self.intervention.root)
-            glMatrixMode(GL_PROJECTION)
-            glLoadIdentity()
-            gluPerspective(
-                self._field_of_view,
-                (self.display_size[0] / self.display_size[1]),
-                self._z_near,
-                self._z_far,
-            )
-
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
-            self._initialized = True
-            if self.intervention.sofa_initialized_2:
-                self.initial_orientation = np.array(
-                    [
-                        self._camera.orientation[3],
-                        self._camera.orientation[0],
-                        self._camera.orientation[1],
-                        self._camera.orientation[2],
-                    ]
-                )
-            else:
-                self.initial_orientation = None
+        gl = self._opengl_gl
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glEnable(gl.GL_LIGHTING)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glDepthFunc(gl.GL_LESS)
+        self._sofa.SofaGL.glewInit()
+        self._sofa.Simulation.initVisual(self.intervention.sofa_root)
+        self._sofa.Simulation.initTextures(self.intervention.sofa_root)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        camera = self.intervention.sofa_camera
+        width = camera.widthViewport.value
+        height = camera.heightViewport.value
+        self._opengl_glu.gluPerspective(
+            camera.fieldOfView.value,
+            (width / height),
+            camera.zNear.value,
+            camera.zFar.value,
+        )
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
+        self.initial_orientation = np.array(
+            [
+                camera.orientation[3],
+                camera.orientation[0],
+                camera.orientation[1],
+                camera.orientation[2],
+            ]
+        )
+        self._theta_x = 0
+        self._theta_z = 0
+        position = camera.position
+        look_at = camera.lookAt
+        self._initial_direction = position - look_at
+        self._distance = np.linalg.norm(self._initial_direction)
+        self._initial_direction = self._initial_direction / self._distance
 
     def close(self):
 
         pygame.quit()  # pylint: disable=no-member
 
     def translate(self, velocity: np.array):
+        dt = self.intervention.sofa_root.dt.value
+        camera = self.intervention.sofa_camera
 
-        dt = self.intervention.root.dt.value
-
-        position = self._camera.position
+        position = camera.position
         position += velocity * dt
-        self._camera.position = position
+        camera.position = position
 
-        look_at = self._camera.lookAt
+        look_at = camera.lookAt
         look_at += velocity * dt
-        self._camera.lookAt = look_at
+        camera.lookAt = look_at
 
     def zoom(self, velocity: float):
-        position = self._camera.position
-        look_at = self._camera.lookAt
-        dt = self.intervention.root.dt.value
+        dt = self.intervention.sofa_root.dt.value
+        camera = self.intervention.sofa_camera
+
+        position = camera.position
+        look_at = camera.lookAt
         direction = look_at - position
         direction = (
             direction
@@ -304,12 +148,13 @@ class SofaPygame(Visualisation):
         )
         position += direction * velocity * dt
         self._distance -= velocity * dt
-        self._camera.position = position
+        camera.position = position
 
     def rotate(self, lao_rao_speed: float, cra_cau_speed: float):
-        dt = self.intervention.root.dt.value
+        dt = self.intervention.sofa_root.dt.value
+        camera = self.intervention.sofa_camera
 
-        look_at = self._camera.lookAt
+        look_at = camera.lookAt
         self._theta_x += cra_cau_speed * dt
         self._theta_z += lao_rao_speed * dt
         theta_x = self._theta_x
@@ -332,7 +177,7 @@ class SofaPygame(Visualisation):
         rotation = np.matmul(rotation_z, rotation_x)
         offset = np.matmul(rotation, self._initial_direction * self._distance)
 
-        self._camera.position = look_at + np.array(offset)
+        camera.position = look_at + np.array(offset)
 
         camera_rot_x = np.array([cos(theta_x / 2), sin(theta_x / 2), 0, 0])
         camera_rot_z = np.array([cos(theta_z / 2), 0, 0, sin(theta_z / 2)])
@@ -340,7 +185,7 @@ class SofaPygame(Visualisation):
         camera_orientation = self._quat_mult(camera_rot_x, self.initial_orientation)
         camera_orientation = self._quat_mult(camera_rot_z, camera_orientation)
 
-        self._camera.orientation = np.array(
+        camera.orientation = np.array(
             [
                 camera_orientation[1],
                 camera_orientation[2],

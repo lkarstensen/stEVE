@@ -1,5 +1,5 @@
 from .start import Start
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 
 
 class MaxDeviceLength(Start):

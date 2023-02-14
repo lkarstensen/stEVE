@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 from .observation import Observation, gym
 
 
@@ -51,19 +51,18 @@ class Tracking(Observation):
         tracking_state = [tracking[0]]
         if self.n_points > 1:
             acc_dist = 0.0
-            for point, next_point in zip(tracking[1:], tracking[:-1]):
+            for point, next_point in zip(tracking[:-1], tracking[1:]):
                 if len(tracking_state) >= self.n_points or np.all(point == next_point):
                     break
                 length = np.linalg.norm(next_point - point)
+                dist_to_point = scaled_resolution - acc_dist
                 acc_dist += length
                 while (
                     acc_dist >= scaled_resolution
                     and len(tracking_state) < self.n_points
                 ):
                     unit_vector = (next_point - point) / length
-                    tracking_point = next_point - unit_vector * (
-                        acc_dist - scaled_resolution
-                    )
+                    tracking_point = point + unit_vector * dist_to_point
                     tracking_state.append(tracking_point)
                     acc_dist -= scaled_resolution
 

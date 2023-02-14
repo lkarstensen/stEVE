@@ -5,7 +5,7 @@ class Dummy(Visualisation):
     def __init__(self, *args, **kwds) -> None:  # pylint: disable=unused-argument
         ...
 
-    def step(self):
+    def render(self):
         ...
 
     def close(self):

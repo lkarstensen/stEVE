@@ -4,8 +4,8 @@ from time import perf_counter
 import pygame
 import numpy as np
 import eve
-import eve.simulation3d
 import eve.visualisation
+from PIL import Image
 
 # vessel_tree = eve.vesseltree.AorticArchRandom(
 #     mode="eval",
@@ -15,19 +15,17 @@ import eve.visualisation
 #     omit_axis="y",
 # )
 vessel_tree = eve.vesseltree.VMR(
-    "/Users/lennartkarstensen/stacie/eve/eve/vesseltree/data/vmr/0095_0001/",
+    "/Users/lennartkarstensen/stacie/eve/eve/vesseltree/data/vmr/0094_0001/",
     -10,
     -2,
     rotate_yzx_deg=[0, 110, 8],
 )
 
-device = eve.simulation3d.device.JWire()
+device = eve.intervention.device.JWire()
 
-simulation = eve.simulation3d.Guidewire(
+simulation = eve.intervention.Intervention(
     vessel_tree=vessel_tree,
-    device=device,
-    sofa_native_gui=False,
-    dt_simulation=0.006,
+    devices=[device],
     stop_device_at_tree_end=True,
 )
 start = eve.start.MaxDeviceLength(
@@ -51,17 +49,8 @@ position = eve.observation.Tracking(
     n_points=5,
 )
 position = eve.observation.wrapper.RelativeToFirstRow(position)
-# position = eve.observation.wrapper.CoordinatesTo2D(
-#     position,
-#     dim_to_delete="y",
-# )
-# position = eve.state.wrapper.Normalize(position)
 target_state = eve.observation.Target(target=target)
-target_state = eve.observation.wrapper.CoordinatesTo2D(
-    target_state,
-    dim_to_delete="y",
-)
-# target_state = eve.state.wrapper.Normalize(target_state)
+target_state = eve.observation.wrapper.ToTrackingCS(target_state, simulation)
 rotation = eve.observation.Rotations(intervention=simulation)
 
 state = eve.observation.ObsDict(
@@ -83,6 +72,8 @@ reward = eve.reward.Combination([target_reward, path_delta])
 target_reached = eve.terminal.TargetReached(target=target)
 max_steps = eve.truncation.MaxSteps(200)
 
+imaging = eve.imaging.Pillow(simulation, (1000, 2000))
+
 visualisation = eve.visualisation.SofaPygame(intervention=simulation)
 
 
@@ -98,6 +89,7 @@ env = eve.Env(
     truncation=max_steps,
     visualisation=visualisation,
     pathfinder=pathfinder,
+    imaging=imaging,
 )
 
 n_steps = 0
@@ -153,10 +145,12 @@ while True:
         env.visualisation.zoom(-1000)
     action = (trans, rot)
     obs, reward, terminal, truncation, info = env.step(action=action)
+    env.render()
     n_steps += 1
 
     print(obs)
-
+    img = Image.fromarray(env.imaging.x_ray_image)
+    img.show()
     if keys_pressed[pygame.K_RETURN]:
         env.reset()
         n_steps = 0

@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..intervention import Intervention, Device
+from ..intervention.intervention import Intervention, Device
 from . import Tracking
 
 
@@ -18,6 +18,6 @@ class TrackingDevice(Tracking):
         self.device = device
 
     def _calculate_tracking_state(self) -> np.ndarray:
-        tracking = self.intervention.tracking_per_device[self.device]
+        tracking = self.intervention.device_trackings[self.device]
         inserted_length = self.intervention.device_lengths_inserted[self.device]
         return self._evenly_distributed_tracking(tracking, inserted_length)

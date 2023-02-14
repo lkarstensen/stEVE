@@ -4,7 +4,7 @@ import numpy as np
 
 from .target import Target, gym
 from ..vesseltree import VesselTree
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 
 
 class CenterlineRandom(Target):

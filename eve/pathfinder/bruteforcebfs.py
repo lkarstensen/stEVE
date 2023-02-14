@@ -5,7 +5,7 @@ import numpy as np
 
 from .pathfinder import Pathfinder, gym
 from ..vesseltree import Branch, VesselTree, BranchingPoint
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 from ..target import Target
 
 
@@ -63,7 +63,7 @@ class BruteForceBFS(Pathfinder):
         self.step()
 
     def step(self) -> None:
-        position = self.intervention.tracking_ground_truth[0]
+        position = self.intervention.instrument_position_vessel_cs[0]
         target = self.target.coordinates
         position_branch = self.vessel_tree.find_nearest_branch_to_point(position)
         target_branch = self.vessel_tree.find_nearest_branch_to_point(target)

@@ -2,7 +2,7 @@ from typing import List
 import numpy as np
 
 from . import Start
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 
 
 class RandomAdvance(Start):

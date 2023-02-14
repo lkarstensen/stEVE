@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Tuple, Union
 import math
-from .device3d import ProceduralShape
+from .device import ProceduralShape
 
 
 @dataclass(frozen=True)

@@ -1,5 +1,5 @@
 from .reward import Reward
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 
 
 class InsertionLengthRelativeDelta(Reward):

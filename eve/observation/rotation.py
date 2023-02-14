@@ -2,7 +2,7 @@ from .observation import Observation, gym
 from math import sin, cos
 import numpy as np
 
-from ..intervention import Intervention
+from ..intervention.intervention import Intervention
 
 
 class Rotations(Observation):
