@@ -1,15 +1,12 @@
-from time import sleep
 import eve
 import random
 
-import torch.multiprocessing as mp
 
 if __name__ == "__main__":
-    mp.set_start_method("spawn", force=True)
 
     vessel_tree = eve.vesseltree.AorticArch()
-    device = eve.simulation3d.device.JWire()
-    simulation = eve.simulation3d.MutliDeviceMP(vessel_tree, [device])
+    device = eve.intervention.device.JWire()
+    simulation = eve.intervention.Intervention(vessel_tree, [device])
 
     start = eve.start.InsertionPoint(simulation)
     target = eve.target.CenterlineRandom(vessel_tree, simulation, threshold=10)
@@ -18,23 +15,23 @@ if __name__ == "__main__":
 
     position = eve.observation.Tracking(simulation, n_points=5)
     position = eve.observation.wrapper.RelativeToFirstRow(position)
-    position = eve.observation.wrapper.ToTrackingCS(position, dim_to_delete="y")
-    # position = eve.state.wrapper.Normalize(position)
     target_state = eve.observation.Target(target)
-    target_state = eve.observation.wrapper.ToTrackingCS(target_state, dim_to_delete="y")
+    target_state = eve.observation.wrapper.ToTrackingCS(
+        target_state, intervention=simulation
+    )
     target_state = eve.observation.wrapper.Normalize(target_state)
     rotation = eve.observation.Rotations(simulation)
-    state = eve.observation.ObsDict([position, target_state, rotation])
+    state = eve.observation.ObsDict(
+        {"position": position, "target": target_state, "rotation": rotation}
+    )
 
     target_reward = eve.reward.TargetReached(target, factor=1.0)
     step_reward = eve.reward.Step(factor=-0.01)
     path_delta = eve.reward.PathLengthDelta(pathfinder, 0.01)
     reward = eve.reward.Combination([target_reward, path_delta])
 
-    max_steps = eve.terminal.MaxSteps(1000)
-    target_reached = eve.terminal.TargetReached(target)
-    done = eve.terminal.Combination([max_steps, target_reached])
-    visualisation = eve.visualisation.VisualisationDummy()
+    target_reached = eve.terminal.TargetReached(target=target)
+    max_steps = eve.truncation.MaxSteps(200)
     env = eve.Env(
         vessel_tree=vessel_tree,
         intervention=simulation,
@@ -43,8 +40,8 @@ if __name__ == "__main__":
         success=success,
         observation=state,
         reward=reward,
-        terminal=done,
-        visualisation=visualisation,
+        terminal=target_reached,
+        truncation=max_steps,
         pathfinder=pathfinder,
     )
 

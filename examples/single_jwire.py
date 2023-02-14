@@ -5,7 +5,6 @@ import pygame
 import numpy as np
 import eve
 import eve.visualisation
-from PIL import Image
 
 # vessel_tree = eve.vesseltree.AorticArchRandom(
 #     mode="eval",
@@ -61,7 +60,6 @@ target_reward = eve.reward.TargetReached(
     target=target,
     factor=1.0,
 )
-# step_reward = eve.reward.Step(factor=-0.01)
 path_delta = eve.reward.PathLengthDelta(
     pathfinder=pathfinder,
     factor=0.01,
@@ -147,10 +145,7 @@ while True:
     obs, reward, terminal, truncation, info = env.step(action=action)
     env.render()
     n_steps += 1
-
     print(obs)
-    img = Image.fromarray(env.imaging.x_ray_image)
-    img.show()
     if keys_pressed[pygame.K_RETURN]:
         env.reset()
         n_steps = 0
