@@ -8,17 +8,7 @@ import eve.visualisation
 
 vessel_tree = eve.vesseltree.AorticArch()
 device = eve.intervention.device.JWire(beams_per_mm_straight=0.5)
-device2 = eve.intervention.device.JWire(
-    name="cath",
-    visu_edges_per_mm=0.5,
-    tip_outer_diameter=1.2,
-    straight_outer_diameter=1.2,
-    tip_inner_diameter=1.0,
-    straight_inner_diameter=1.0,
-    color=(1.0, 0.0, 0.0),
-)
-
-# device2 = eve.simulation3d.device.Simmons3Bends()
+device2 = eve.intervention.device.Simmons3Bends()
 
 simulation = eve.intervention.Intervention(
     vessel_tree=vessel_tree, devices=[device, device2], lao_rao_deg=-5, cra_cau_deg=20
