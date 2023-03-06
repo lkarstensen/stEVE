@@ -36,5 +36,7 @@ setup(
         "matplotlib",
         "pymunk",
         "opencv-python",
+        "gymnasium",
+        "pyyaml",
     ],
 )

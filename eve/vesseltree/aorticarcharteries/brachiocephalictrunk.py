@@ -40,4 +40,4 @@ def brachiocephalic_trunk_static(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("bt", cl_coordinates, cl_radii), chs_points
+    return Branch("bct", cl_coordinates, cl_radii), chs_points

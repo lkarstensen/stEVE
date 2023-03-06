@@ -16,7 +16,7 @@ from .terminal import Terminal
 from .truncation import Truncation, TruncationDummy
 from .info import Info, InfoDummy
 from .imaging import Imaging, ImagingDummy
-
+from .util import ConfigHandler
 
 ObsType = TypeVar(
     "ObsType",
@@ -45,7 +45,6 @@ class Env(gym.Env):
         interim_target: Optional[InterimTarget] = None,
         visualisation: Optional[Visualisation] = None,
     ) -> None:
-
         self.vessel_tree = vessel_tree
         self.intervention = intervention
         self.success = success
@@ -123,13 +122,24 @@ class Env(gym.Env):
         self.intervention.close()
         self.visualisation.close()
 
+    def save_config(self, file_path: str):
+        confighandler = ConfigHandler()
+        confighandler.save_config(self, file_path)
+
 
 class DummyEnv(Env):
     def __init__(  # pylint: disable=super-init-not-called
         self, *args, **kwds  # pylint: disable=unused-argument
     ) -> None:
-        self.action_space = gym.spaces.Box(low=np.empty((1,)), high=np.empty((1,)))
-        self.observation_space = gym.spaces.Box(low=np.empty((1,)), high=np.empty((1,)))
+        ...
+
+    @property
+    def observation_space(self) -> gym.Space:
+        return gym.spaces.Box(low=np.empty((1,)), high=np.empty((1,)))
+
+    @property
+    def action_space(self) -> gym.Space:
+        return gym.spaces.Box(low=np.empty((1,)), high=np.empty((1,)))
 
     def step(self, action: np.ndarray) -> None:
         ...

@@ -7,6 +7,7 @@ from .vesseltree import VesselTree, Insertion, gym
 from .util.branch import Branch, calc_branching, rotate
 from .util import calc_insertion
 from .util.meshing import get_temp_mesh_path
+from .util.vmrdownload import download_vmr_files
 
 
 SCALING_FACTOR = 10
@@ -82,21 +83,25 @@ def _load_points_from_pth(pth_file_path: str, vtu_mesh: pv.UnstructuredGrid) -> 
 class VMR(VesselTree):
     def __init__(
         self,
-        vmr_model_folder: str,
+        model: str,
         insertion_point_idx: int,
         insertion_direction_idx_diff: int,
+        insertion_vessel_name: str = "aorta",
         rotate_yzx_deg: Optional[Tuple[float, float, float]] = None,
     ) -> None:
-        self.vmr_model_folder = vmr_model_folder
+        self.model = model
         self.insertion_point_idx = insertion_point_idx
         self.insertion_direction_idx_diff = insertion_direction_idx_diff
+        self.insertion_vessel_name = insertion_vessel_name.lower()
         self.rotate_yzx_deg = rotate_yzx_deg
 
         self.branches = None
         self.insertion = None
         self.branching_points = None
         self._mesh_path = None
-        self._mesh_folder = os.path.join(self.vmr_model_folder, "Meshes")
+
+        self._model_folder = download_vmr_files(model)
+        self._mesh_folder = os.path.join(self._model_folder, "Meshes")
 
     @property
     def mesh_path(self) -> str:
@@ -105,7 +110,6 @@ class VMR(VesselTree):
         return self._mesh_path
 
     def reset(self, episode_nr=0, seed: int = None) -> None:
-
         if self.branches is None:
             self._make_branches()
 
@@ -113,14 +117,14 @@ class VMR(VesselTree):
         mesh_path = _get_vtk_file(self._mesh_folder, ".vtu")
         mesh = pv.read(mesh_path)
         mesh.scale([SCALING_FACTOR, SCALING_FACTOR, SCALING_FACTOR], inplace=True)
-        branches = _get_branches(self.vmr_model_folder, mesh)
+        branches = _get_branches(self._model_folder, mesh)
 
         if self.rotate_yzx_deg is not None:
             branches = rotate(branches, self.rotate_yzx_deg)
         self.branches = branches
-        aorta = self["aorta"]
+        insert_vessel = self[self.insertion_vessel_name]
         ip, ip_dir = calc_insertion(
-            aorta,
+            insert_vessel,
             self.insertion_point_idx,
             self.insertion_point_idx + self.insertion_direction_idx_diff,
         )

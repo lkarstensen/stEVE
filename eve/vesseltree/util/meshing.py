@@ -41,7 +41,9 @@ def generate_mesh(
         voxel_cube.add_padding_layer_all_sides()
 
     for branch in branches:
-        voxel_cube.mark_centerline_in_array(branch, marking_value=1, radius_padding=0)
+        voxel_cube.mark_centerline_in_array(
+            branch.coordinates, branch.radii, marking_value=1, radius_padding=0
+        )
     voxel_cube.gaussian_smooth(1)
     voxel_cube.gaussian_smooth(1)
 

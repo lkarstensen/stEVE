@@ -10,7 +10,6 @@ from . import VesselTree, AorticArch, ArchType
 class AorticArchRandom(VesselTree):
     def __init__(
         self,
-        mode: str,
         seed_random: Optional[int] = None,
         scale_width_array: List[float] = np.linspace(0.7, 1.3, 1000, endpoint=True),
         scale_heigth_array: List[float] = np.linspace(0.7, 1.3, 1000, endpoint=True),
@@ -22,21 +21,22 @@ class AorticArchRandom(VesselTree):
         rotate_x_deg_array: Optional[List[float]] = None,
         omit_axis: Optional[str] = None,
         n_coordinate_space_iters: int = 5,
+        episodes_between_change: int = 1,
     ) -> None:
-        self.mode = mode
         self.seed_random = seed_random
-        self.arch_types_filter = arch_types_filter
-        self.seeds_vessel = seeds_vessel
         self.scale_width_array = scale_width_array
         self.scale_heigth_array = scale_heigth_array
         self.scale_diameter_array = scale_diameter_array
-        self.rotate_y_deg_array = rotate_y_deg_array
-        self.rotate_z_deg_array = rotate_z_deg_array
-        self.rotate_x_deg_array = rotate_x_deg_array
+        self.seeds_vessel = seeds_vessel or [None]
+        self.arch_types_filter = arch_types_filter
+        self.rotate_y_deg_array = rotate_y_deg_array or [0.0]
+        self.rotate_z_deg_array = rotate_z_deg_array or [0.0]
+        self.rotate_x_deg_array = rotate_x_deg_array or [0.0]
         self.omit_axis = omit_axis
         self.n_low_high_global_iters = n_coordinate_space_iters
+        self.episodes_between_change = episodes_between_change
 
-        all_archtypes = tuple(arch for arch in AorticArch)
+        all_archtypes = tuple(arch for arch in ArchType)
 
         if arch_types_filter is not None:
             self._arch_types = tuple(set(all_archtypes) & set(arch_types_filter))
@@ -56,7 +56,7 @@ class AorticArchRandom(VesselTree):
         if self._vessel_tree is None:
             self._calc_coordinate_space(self.n_low_high_global_iters)
             self._vessel_tree = self._randomize_vessel()
-        elif self.mode == "eval" or (self.mode == "train" and episode_nr % 2 == 0):
+        elif episode_nr % self.episodes_between_change == 0:
             self._vessel_tree = self._randomize_vessel()
 
         self._vessel_tree.reset(episode_nr, seed)

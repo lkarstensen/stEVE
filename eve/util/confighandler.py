@@ -1,19 +1,18 @@
 from typing import Any, List, Tuple
-import numpy as np
-import torch
 from enum import Enum
-
-import yaml
-import inspect
 from importlib import import_module
+
+import inspect
+import numpy as np
+import yaml
 
 
 class ConfigHandler:
     def __init__(self):
         self.object_registry = {}
 
-    def save_config(self, object: Any, file: str) -> None:
-        obj_dict = self.object_to_config_dict(object)
+    def save_config(self, eve_object: Any, file: str) -> None:
+        obj_dict = self.object_to_config_dict(eve_object)
         self.save_config_dict(obj_dict, file)
 
     def load_config(self, file: str) -> Any:
@@ -21,9 +20,9 @@ class ConfigHandler:
         obj = self.config_dict_to_object(obj_dict)
         return obj
 
-    def object_to_config_dict(self, object: Any) -> dict:
+    def object_to_config_dict(self, eve_object: Any) -> dict:
         self.object_registry = {}
-        config_dict = self._obj_to_dict(object)
+        config_dict = self._obj_to_dict(eve_object)
         self.object_registry = {}
         return config_dict
 
@@ -44,23 +43,25 @@ class ConfigHandler:
             from yaml import CLoader as Loader
         except ImportError:
             from yaml import Loader
-        with open(file, "r") as config:
+        with open(file, "r", encoding="utf-8") as config:
             config_dict = yaml.load(config, Loader=Loader)
         return config_dict
 
     def save_config_dict(self, config_dict: dict, file: str) -> None:
         if not file.endswith(".yml"):
             file += ".yml"
-        with open(file, "w") as dumpfile:
+        with open(file, "w", encoding="utf-8") as dumpfile:
             yaml.dump(config_dict, dumpfile, default_flow_style=False, sort_keys=False)
 
-    def _obj_to_dict(self, object) -> dict:
+    def _obj_to_dict(self, eve_object) -> dict:
         attributes_dict = {}
-        attributes_dict["class"] = f"{object.__module__}.{object.__class__.__name__}"
-        attributes_dict["_id"] = id(object)
-        if id(object) in self.object_registry:
+        attributes_dict[
+            "class"
+        ] = f"{eve_object.__module__}.{eve_object.__class__.__name__}"
+        attributes_dict["_id"] = id(eve_object)
+        if id(eve_object) in self.object_registry:
             return attributes_dict
-        init_attributes = self._get_init_attributes(object.__init__)
+        init_attributes = self._get_init_attributes(eve_object.__init__)
 
         if "args" in init_attributes:
             init_attributes.remove("args")
@@ -68,23 +69,14 @@ class ConfigHandler:
         if "kwargs" in init_attributes:
             init_attributes.remove("kwargs")
 
-        if "stacierl.optimizer" in object.__module__:
-            defaults = object.defaults
-            for key in list(defaults.keys()):
-                if key in init_attributes:
-                    init_attributes.remove(key)
-                else:
-                    defaults.pop(key)
-            attributes_dict.update(defaults)
+        if "kwds" in init_attributes:
+            init_attributes.remove("kwds")
 
         for attribute in init_attributes:
-            value = getattr(object, attribute)
+            value = getattr(eve_object, attribute)
 
             if isinstance(value, np.integer):
                 dict_value = int(value)
-
-            elif isinstance(value, torch.device):
-                dict_value = str(value)
 
             elif isinstance(value, Enum):
                 dict_value = value.value
@@ -100,33 +92,34 @@ class ConfigHandler:
                             dict_value.append(str(type(v)))
                             continue
                         search_string = v.__module__ + str(type(v).__bases__)
-                        if (
-                            "stacierl." in search_string
-                            or "eve." in search_string
-                            or "stacievesseltrees." in search_string
-                        ):
+                        if "eve." in search_string:
                             dict_value.append(self._obj_to_dict(v))
                         continue
 
                     dict_value.append(v)
 
+            elif isinstance(value, dict):
+                dict_value = {}
+                for k, v in value.items():
+                    if hasattr(v, "__module__"):
+                        if "eve" in v.__module__ and "Space" in str(type(v)):
+                            dict_value[k] = str(type(v))
+                            continue
+                        search_string = v.__module__ + str(type(v).__bases__)
+                        if "eve." in search_string:
+                            dict_value[k] = self._obj_to_dict(v)
+                        continue
+
+                    dict_value[k] = v
+
             else:
                 if hasattr(value, "__module__"):
                     search_string = value.__module__ + str(type(value).__bases__)
-                    if "stacierl.optimizer" in value.__module__:
-                        dict_value = self._obj_to_dict(value)
 
-                    elif "eve" in value.__module__ and "Space" in str(type(value)):
+                    if "eve" in value.__module__ and "Space" in str(type(value)):
                         dict_value = str(type(value))
 
-                    elif (
-                        "stacierl." in search_string
-                        or "eve." in search_string
-                        or "stacievesseltrees." in search_string
-                    ):
-                        dict_value = self._obj_to_dict(value)
-
-                    elif "torch.optim.lr_scheduler" in value.__module__:
+                    elif "eve." in search_string:
                         dict_value = self._obj_to_dict(value)
 
                     else:
@@ -138,12 +131,11 @@ class ConfigHandler:
                     dict_value = value
 
             attributes_dict[attribute] = dict_value
-        self.object_registry[id(object)] = attributes_dict
+        self.object_registry[id(eve_object)] = attributes_dict
         return attributes_dict
 
     @staticmethod
     def _get_init_attributes(init_function):
-
         init_attributes = []
         kwargs = inspect.signature(init_function)
         for param in kwargs.parameters.values():
@@ -182,9 +174,6 @@ class ConfigHandler:
         return obj
 
     def _get_class_constructor(self, class_str: str):
-        try:
-            module_path, class_name = class_str.rsplit(".", 1)
-            module = import_module(module_path)
-            return getattr(module, class_name)
-        except (ImportError, AttributeError) as e:
-            raise ImportError(class_str)
+        module_path, class_name = class_str.rsplit(".", 1)
+        module = import_module(module_path)
+        return getattr(module, class_name)

@@ -1,6 +1,5 @@
-from copy import deepcopy
 from dataclasses import dataclass
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Union
 import skimage.filters
 import numpy as np
 import pyvista as pv
@@ -117,21 +116,20 @@ class VoxelCube:
             self.value_array = np.delete(self.value_array, -1, axis)
 
     def gaussian_smooth(self, sigma: float):
-
         self.value_array = skimage.filters.gaussian(self.value_array, sigma)
 
     def mark_centerline_in_array(
         self,
-        branch: Branch,
+        cl_coordinates: np.ndarray,
+        cl_radii: Union[np.ndarray, float],
         marking_value: float = 1,
         radius_padding: float = 0,
-        custom_radius: float = None,
     ):
-
-        radii = deepcopy(branch.radii)
-        if custom_radius is not None:
-            radii[:] = custom_radius
-        for coordinates, radius in zip(branch.coordinates, radii):
+        if isinstance(cl_radii, float):
+            radii = np.ones(([cl_coordinates.shape[0]])) * cl_radii
+        else:
+            radii = cl_radii
+        for coordinates, radius in zip(cl_coordinates, radii):
             (
                 voxel_idxs_of_interest,
                 voxels_of_interest,

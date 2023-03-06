@@ -47,6 +47,8 @@ class Branch:
         )
 
     def in_branch(self, points: np.ndarray) -> np.ndarray:
+        if points.ndim == 1:
+            points = np.expand_dims(points, 0)
         broadcast_shape = [self.coordinates.shape[0]] + list(points.shape)
         points = np.broadcast_to(points, broadcast_shape)
         points = np.swapaxes(points, 0, 1)
@@ -97,11 +99,9 @@ class BranchingPoint:
 
 
 def calc_branching(branches: Tuple[Branch]):
-
     raw_branching_points: List[BranchingPoint] = []
 
     for main_branch in branches:
-
         # find connecting branches
         for other_branch in branches:
             if other_branch == main_branch:
@@ -152,7 +152,6 @@ def calc_branching(branches: Tuple[Branch]):
         branching_point = raw_branching_points.pop(-1)
         discard_branching_point = False
         for i, other_branching_point in enumerate(raw_branching_points):
-
             distance = np.linalg.norm(
                 branching_point.coordinates - other_branching_point.coordinates
             )

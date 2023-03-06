@@ -7,11 +7,13 @@ from ..util import EveObject
 
 
 class Target(EveObject, ABC):
+    # Needs to be set by implementing classes in step() or reset():
+    coordinates: np.ndarray
+
     def __init__(self, intervention: Intervention, threshold: float) -> None:
         self.intervention = intervention
         self.threshold = threshold
 
-        self.coordinates: np.ndarray = None
         self.reached: bool = False
 
     @property
