@@ -118,7 +118,7 @@ class SOFACore:
         self._sofa.Simulation.init(self.root)
         self.sofa_initialized = True
         self.simulation_error = False
-        self.logger.info("Sofa Initialized")
+        self.logger.debug("Sofa Initialized")
 
     def _load_plugins(self):
         self.root.addObject(
