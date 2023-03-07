@@ -27,8 +27,8 @@ class SOFACore:
         self._device_dofs = []
         self.sofa_initialized = False
 
-        self._sofa = importlib.import_module("Sofa")
-        self._sofa_runtime = importlib.import_module("SofaRuntime")
+        self._sofa = None
+        self._sofa_runtime = None
 
     @property
     def dof_positions(self) -> np.ndarray:
@@ -97,6 +97,8 @@ class SOFACore:
         coords_high: Optional[Tuple[float, float, float]] = None,
         coords_low: Optional[Tuple[float, float, float]] = None,
     ):
+        self._sofa = importlib.import_module("Sofa")
+        self._sofa_runtime = importlib.import_module("SofaRuntime")
         if self.sofa_initialized:
             self.unload_simulation()
         if self.root is None:
