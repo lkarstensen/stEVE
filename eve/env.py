@@ -72,7 +72,7 @@ class Env(gym.Env):
 
     def step(
         self, action: np.ndarray
-    ) -> tuple[ObsType, float, bool, bool, dict[str, Any]]:
+    ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
         self.vessel_tree.step()
         self.intervention.step(action)
         self.imaging.step()
@@ -95,9 +95,9 @@ class Env(gym.Env):
     def reset(
         self,
         *,
-        seed: int | None = None,
-        options: dict[str, Any] | None = None,
-    ) -> tuple[ObsType, dict[str, Any]]:
+        seed: Optional[int] = None,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[ObsType, Dict[str, Any]]:
         super().reset(seed=seed)
         self.vessel_tree.reset(self.episode_number, seed)
         self.intervention.reset(self.episode_number)
@@ -115,8 +115,8 @@ class Env(gym.Env):
         self.episode_number += 1
         return self.observation()
 
-    def render(self) -> RenderFrame | list[RenderFrame] | None:
-        self.visualisation.render()
+    def render(self) -> Optional[np.ndarray]:
+        return self.visualisation.render()
 
     def close(self):
         self.intervention.close()
