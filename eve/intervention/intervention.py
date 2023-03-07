@@ -1,5 +1,6 @@
 from typing import Dict, List
 import logging
+import threading
 import numpy as np
 import gymnasium as gym
 
@@ -18,6 +19,7 @@ class Intervention:
         stop_device_at_tree_end: bool = True,
         image_frequency: float = 7.5,
         dt_simulation: float = 0.006,
+        timeout_step: float = 2,
     ) -> None:
         self.logger = logging.getLogger(self.__module__)
 
@@ -28,6 +30,7 @@ class Intervention:
         self.stop_device_at_tree_end = stop_device_at_tree_end
         self.image_frequency = image_frequency
         self.dt_simulation = dt_simulation
+        self.timeout_step = timeout_step
 
         velocity_limits = tuple(device.velocity_limit for device in devices)
         self.velocity_limits = np.array(velocity_limits, dtype=np.float32)
@@ -39,6 +42,7 @@ class Intervention:
         self._loaded_mesh = None
         self._sofa_core = SOFACore(devices, image_frequency, dt_simulation)
         self._image = np.empty(self.display_size)
+        self.simulation_error = False
 
     @property
     def tracking_space(self) -> gym.spaces.Box:
@@ -134,13 +138,27 @@ class Intervention:
         self.last_action = action
 
         for _ in range(int((1 / self.image_frequency) / self.dt_simulation)):
-            self._sofa_core.do_sofa_step(action)
+            step_finished = threading.Event()
+            step_thread = threading.Thread(
+                target=self._sofa_step, args=[action, step_finished]
+            )
+            step_thread.start()
+            if not step_finished.wait(self.timeout_step):
+                self.logger.warning(
+                    "Step Timeout triggered. Setting simulation_error flag"
+                )
+                self.simulation_error = True
+
+    def _sofa_step(self, action: np.ndarray, finished: threading.Event):
+        self._sofa_core.do_sofa_step(action)
+        finished.set()
 
     def reset(self, episode_nr: int = 0, seed: int = None) -> None:
         # pylint: disable=unused-argument
         if (
             self._loaded_mesh != self.vessel_tree.mesh_path
             or not self._sofa_core.sofa_initialized
+            or self.simulation_error
         ):
             ip_pos = self.vessel_tree.insertion.position
             ip_dir = self.vessel_tree.insertion.direction
@@ -154,9 +172,24 @@ class Intervention:
                 coords_high=self.vessel_tree.coordinate_space.high,
             )
             self._loaded_mesh = self.vessel_tree.mesh_path
+            self.simulation_error = False
 
     def reset_devices(self) -> None:
         self._sofa_core.reset_sofa_devices()
+
+    def reload_sofa(self):
+        # self._sofa_core.reload_sofa()
+        ip_pos = self.vessel_tree.insertion.position
+        ip_dir = self.vessel_tree.insertion.direction
+        self._sofa_core.init_sofa(
+            insertion_point=ip_pos,
+            insertion_direction=ip_dir,
+            mesh_path=self.vessel_tree.mesh_path,
+            add_visual=self.init_visual_nodes,
+            display_size=self.display_size,
+            coords_low=self.vessel_tree.coordinate_space.low,
+            coords_high=self.vessel_tree.coordinate_space.high,
+        )
 
     def close(self):
         self._sofa_core.unload_simulation()
