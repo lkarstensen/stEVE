@@ -83,6 +83,7 @@ class Env(gym.Env):
         self.observation.step()
         self.reward.step()
         self.terminal.step()
+        self.truncation.step()
         self.info.step()
         return (
             self.observation(),
@@ -110,6 +111,7 @@ class Env(gym.Env):
         self.observation.reset(self.episode_number)
         self.reward.reset(self.episode_number)
         self.terminal.reset(self.episode_number)
+        self.truncation.reset(self.episode_number)
         self.info.reset(self.episode_number)
         self.visualisation.reset(self.episode_number)
         self.episode_number += 1
