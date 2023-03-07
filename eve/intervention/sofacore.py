@@ -53,7 +53,8 @@ class SOFACore:
         return rots
 
     def unload_simulation(self):
-        self._sofa.Simulation.unload(self.root)
+        if self.root is not None:
+            self._sofa.Simulation.unload(self.root)
 
     def do_sofa_step(self, action: np.ndarray):
 
