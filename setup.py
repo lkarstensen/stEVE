@@ -1,9 +1,5 @@
 from setuptools import setup, find_packages
 from glob import glob
-import os
-
-filepath = os.path.dirname(os.path.abspath(__file__))
-
 
 visu_mesh_data = glob("eve/visualisation/meshes/*")
 organic3dv2_data = glob("eve/vesseltree/data/cad/organic3dv2/*")
