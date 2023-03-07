@@ -128,7 +128,9 @@ class SOFACore:
             Sofa.Component.Collision.Detection.Algorithm\
             Sofa.Component.Collision.Detection.Intersection\
             Sofa.Component.LinearSolver.Direct\
-            Sofa.Component.IO.Mesh",
+            Sofa.Component.IO.Mesh\
+            Sofa.Component.ODESolver.Backward\
+            Sofa.Component.Constraint.Lagrangian.Correction",
         )
 
     def _basic_setup(self):
