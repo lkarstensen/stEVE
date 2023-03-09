@@ -4,7 +4,7 @@ from ..target import Target
 
 
 class TargetReached(Info):
-    def __init__(self, target: Target, name: str = "target") -> None:
+    def __init__(self, target: Target, name: str = "target_reached") -> None:
         super().__init__(name)
         self.target = target
 
