@@ -10,6 +10,7 @@ import yaml
 class ConfigHandler:
     def __init__(self):
         self.object_registry = {}
+        self._eve = import_module("eve")
 
     def save_config(self, eve_object: Any, file: str) -> None:
         obj_dict = self.object_to_config_dict(eve_object)
@@ -61,7 +62,13 @@ class ConfigHandler:
         attributes_dict["_id"] = id(eve_object)
         if id(eve_object) in self.object_registry:
             return attributes_dict
-        init_attributes = self._get_init_attributes(eve_object.__init__)
+
+        if isinstance(eve_object, self._eve.Env):
+            init_attributes = self._get_init_attributes(self._eve.Env.__init__)
+            if "self" in init_attributes:
+                init_attributes.remove("self")
+        else:
+            init_attributes = self._get_init_attributes(eve_object.__init__)
 
         if "args" in init_attributes:
             init_attributes.remove("args")
