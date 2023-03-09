@@ -11,9 +11,9 @@ class AorticArchRandom(VesselTree):
     def __init__(
         self,
         seed_random: Optional[int] = None,
-        scale_width_array: List[float] = np.linspace(0.7, 1.3, 1000, endpoint=True),
-        scale_heigth_array: List[float] = np.linspace(0.7, 1.3, 1000, endpoint=True),
-        scale_diameter_array: List[float] = np.linspace(0.7, 1.3, 1000, endpoint=True),
+        scale_width_array: List[float] = np.linspace(0.7, 1.3, 200, endpoint=True),
+        scale_heigth_array: List[float] = np.linspace(0.7, 1.3, 200, endpoint=True),
+        scale_diameter_array: List[float] = np.linspace(0.7, 1.3, 200, endpoint=True),
         arch_types_filter: Optional[List[ArchType]] = None,
         seeds_vessel: Optional[List[int]] = None,
         rotate_y_deg_array: Optional[List[float]] = None,
@@ -33,7 +33,7 @@ class AorticArchRandom(VesselTree):
         self.rotate_z_deg_array = rotate_z_deg_array or [0.0]
         self.rotate_x_deg_array = rotate_x_deg_array or [0.0]
         self.omit_axis = omit_axis
-        self.n_low_high_global_iters = n_coordinate_space_iters
+        self.n_coordinate_space_iters = n_coordinate_space_iters
         self.episodes_between_change = episodes_between_change
 
         all_archtypes = tuple(arch for arch in ArchType)
@@ -54,7 +54,7 @@ class AorticArchRandom(VesselTree):
         if seed is not None:
             self._rng = random.Random(seed)
         if self._vessel_tree is None:
-            self._calc_coordinate_space(self.n_low_high_global_iters)
+            self._calc_coordinate_space(self.n_coordinate_space_iters)
             self._vessel_tree = self._randomize_vessel()
         elif episode_nr % self.episodes_between_change == 0:
             self._vessel_tree = self._randomize_vessel()
