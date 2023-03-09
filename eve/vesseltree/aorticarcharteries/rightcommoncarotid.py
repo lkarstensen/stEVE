@@ -97,7 +97,7 @@ def right_common_carotid_VII(
             coords_mean=(0.0, 0.0, 0.0),
             coords_sigma=(0.0, 0.0, 0.0),
             direction_mean=(0.2, 0.0, 1.0),
-            direction_sigma=(0.2, 0.2, 0.3),
+            direction_sigma=(0.2, 0.2, 0.0),
             direction_magnitude_mean_and_sigma=(1.5, 0.2),
             radius_mean_and_sigma=(10.0, 0.33),
             d_radius_mean_and_sigma=(0.0, 0.0),
