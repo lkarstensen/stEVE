@@ -5,7 +5,6 @@ import gymnasium as gym
 from .interimtarget import InterimTarget, InterimTargetDummy
 from .pathfinder import Pathfinder, PathfinderDummy
 from .intervention import Intervention
-from .success import Success
 from .target import Target
 from .start import Start
 from .visualisation import Visualisation, VisualisationDummy
@@ -34,7 +33,6 @@ class Env(gym.Env):
         intervention: Intervention,
         target: Target,
         start: Start,
-        success: Success,
         observation: Observation,
         reward: Reward,
         terminal: Terminal,
@@ -47,7 +45,6 @@ class Env(gym.Env):
     ) -> None:
         self.vessel_tree = vessel_tree
         self.intervention = intervention
-        self.success = success
         self.target = target
         self.start = start
         self.observation = observation
@@ -79,7 +76,6 @@ class Env(gym.Env):
         self.pathfinder.step()
         self.target.step()
         self.interim_target.step()
-        self.success.step()
         self.observation.step()
         self.reward.step()
         self.terminal.step()
@@ -107,7 +103,6 @@ class Env(gym.Env):
         self.pathfinder.reset(self.episode_number)
         self.interim_target.reset(self.episode_number)
         self.imaging.reset(self.episode_number)
-        self.success.reset(self.episode_number)
         self.observation.reset(self.episode_number)
         self.reward.reset(self.episode_number)
         self.terminal.reset(self.episode_number)

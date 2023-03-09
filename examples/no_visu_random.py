@@ -4,13 +4,12 @@ import random
 
 if __name__ == "__main__":
 
-    vessel_tree = eve.vesseltree.AorticArch()
+    vessel_tree = eve.vesseltree.AorticArch(eve.vesseltree.ArchType.VII)
     device = eve.intervention.device.JWire()
     simulation = eve.intervention.Intervention(vessel_tree, [device])
 
     start = eve.start.InsertionPoint(simulation)
     target = eve.target.CenterlineRandom(vessel_tree, simulation, threshold=10)
-    success = eve.success.TargetReached(target)
     pathfinder = eve.pathfinder.BruteForceBFS(vessel_tree, simulation, target)
 
     position = eve.observation.Tracking(simulation, n_points=5)
@@ -37,7 +36,6 @@ if __name__ == "__main__":
         intervention=simulation,
         start=start,
         target=target,
-        success=success,
         observation=state,
         reward=reward,
         terminal=target_reached,
@@ -49,7 +47,7 @@ if __name__ == "__main__":
         env.reset()
         for _ in range(100):
             action = [[random.uniform(0, 10), random.uniform(-3.28, 3.28)]]
-            s, r, d, i, success = env.step(action)
+            s, r, term, trunc, i = env.step(action)
             print(s)
 
     env.close()

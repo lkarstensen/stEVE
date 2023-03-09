@@ -15,7 +15,6 @@ simulation = eve.intervention.Intervention(
 )
 start = eve.start.MaxDeviceLength(simulation, 380)
 target = eve.target.CenterlineRandom(vessel_tree, simulation, threshold=10)
-success = eve.success.TargetReached(target)
 pathfinder = eve.pathfinder.BruteForceBFS(vessel_tree, simulation, target)
 
 tracking = eve.observation.Tracking(simulation, n_points=5)
@@ -47,7 +46,6 @@ env = eve.Env(
     intervention=simulation,
     start=start,
     target=target,
-    success=success,
     observation=state,
     reward=reward,
     terminal=target_reached,

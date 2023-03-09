@@ -38,7 +38,6 @@ import gymnasium as gym
 #     intervention=simulation,
 #     threshold=10,
 # )
-# success = eve.success.TargetReached(target=target)
 # pathfinder = eve.pathfinder.BruteForceBFS(
 #     vessel_tree=vessel_tree,
 #     intervention=simulation,
@@ -82,7 +81,6 @@ import gymnasium as gym
 #     intervention=simulation,
 #     start=start,
 #     target=target,
-#     success=success,
 #     observation=state,
 #     reward=reward,
 #     terminal=target_reached,
