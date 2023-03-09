@@ -20,8 +20,8 @@ def common_origin_VI(
             direction_mean=(0, 0.6, 1.0),
             direction_sigma=(0.7, 0.2, 0.3),
             direction_magnitude_mean_and_sigma=(1.0, 0.1),
-            diameter_mean_and_sigma=(22.0, 1.0),
-            d_diameter_mean_and_sigma=(0.0, 0.0),
+            radius_mean_and_sigma=(22.0, 1.0),
+            d_radius_mean_and_sigma=(0.0, 0.0),
             coord_offset=start,
             rng=rng,
         )
@@ -33,8 +33,8 @@ def common_origin_VI(
             direction_mean=(-0.3, 0.3, 0.7),
             direction_sigma=(0.3, 0.2, 0.3),
             direction_magnitude_mean_and_sigma=(0.8, 0.1),
-            diameter_mean_and_sigma=(chs_points[-1].diameter - 10, 0.7),
-            d_diameter_mean_and_sigma=(-0.1, 0.033),
+            radius_mean_and_sigma=(chs_points[-1].r - 10, 0.7),
+            d_radius_mean_and_sigma=(-0.1, 0.033),
             coord_offset=start,
             rng=rng,
         )
@@ -57,8 +57,8 @@ def common_origin_IV(
             direction_mean=(0, 0.1, 1),
             direction_sigma=(0.7, 0.6, 0.3),
             direction_magnitude_mean_and_sigma=(1.0, 0.1),
-            diameter_mean_and_sigma=(22.0, 1.0),
-            d_diameter_mean_and_sigma=(0.0, 0.0),
+            radius_mean_and_sigma=(22.0, 1.0),
+            d_radius_mean_and_sigma=(0.0, 0.0),
             coord_offset=start,
             rng=rng,
         )
@@ -70,8 +70,8 @@ def common_origin_IV(
             direction_mean=(-0.3, 0.3, 0.7),
             direction_sigma=(0.3, 0.2, 0.3),
             direction_magnitude_mean_and_sigma=(0.8, 0.1),
-            diameter_mean_and_sigma=(chs_points[-1].diameter - 10, 0.7),
-            d_diameter_mean_and_sigma=(-0.1, 0.033),
+            radius_mean_and_sigma=(chs_points[-1].r - 10, 0.7),
+            d_radius_mean_and_sigma=(-0.1, 0.033),
             coord_offset=start,
             rng=rng,
         )

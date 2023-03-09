@@ -15,7 +15,7 @@ class CHSPoint:
         return (self.y[0], self.y[1], self.y[2])
 
     @property
-    def diameter(self) -> float:
+    def r(self) -> float:
         return self.y[3]
 
     @property
@@ -23,7 +23,7 @@ class CHSPoint:
         return (self.dydx[0], self.dydx[1], self.dydx[2])
 
     @property
-    def d_diameter(self) -> float:
+    def d_r(self) -> float:
         return self.dydx[3]
 
 
@@ -33,22 +33,20 @@ def chs_point_normal(
     direction_mean: Tuple[float, float, float],
     direction_sigma: Tuple[float, float, float],
     direction_magnitude_mean_and_sigma: Tuple[float, float],
-    diameter_mean_and_sigma: Tuple[float, float],
-    d_diameter_mean_and_sigma: Tuple[float, float],
+    radius_mean_and_sigma: Tuple[float, float],
+    d_radius_mean_and_sigma: Tuple[float, float],
     coord_offset: Tuple[float, float, float] = None,
     rng: np.random.Generator = None,
 ):
     if coord_offset is None:
         coord_offset = (0.0, 0.0, 0.0)
-    else:
-        coord_offset = coord_offset
     rng = rng or np.random.default_rng()
     n = rng.normal
     y = [
         n(coords_mean[0], coords_sigma[0]) + coord_offset[0],
         n(coords_mean[1], coords_sigma[1]) + coord_offset[1],
         n(coords_mean[2], coords_sigma[2]) + coord_offset[2],
-        n(diameter_mean_and_sigma[0], diameter_mean_and_sigma[1]),
+        n(radius_mean_and_sigma[0], radius_mean_and_sigma[1]),
     ]
 
     d_coords_direction = [
@@ -63,7 +61,7 @@ def chs_point_normal(
         d_coords[0],
         d_coords[1],
         d_coords[2],
-        n(d_diameter_mean_and_sigma[0], d_diameter_mean_and_sigma[1]),
+        n(d_radius_mean_and_sigma[0], d_radius_mean_and_sigma[1]),
     ]
 
     return CHSPoint(y, dydx)

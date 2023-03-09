@@ -20,8 +20,8 @@ def left_common_carotid(
             direction_mean=(0.3, 0.0, 1.0),
             direction_sigma=(0.3, 0.3, 0.0),
             direction_magnitude_mean_and_sigma=(1.5, 0.2),
-            diameter_mean_and_sigma=(10.0, 0.33),
-            d_diameter_mean_and_sigma=(0.0, 0.0),
+            radius_mean_and_sigma=(10.0, 0.33),
+            d_radius_mean_and_sigma=(0.0, 0.0),
             coord_offset=start,
             rng=rng,
         )
@@ -33,8 +33,8 @@ def left_common_carotid(
             direction_mean=(0.0, 0.0, 1.0),
             direction_sigma=(0.2, 0.3, 0.0),
             direction_magnitude_mean_and_sigma=(1.5, 0.2),
-            diameter_mean_and_sigma=(chs_points[-1].diameter - 0.5, 0.2),
-            d_diameter_mean_and_sigma=(0.0, 0.0),
+            radius_mean_and_sigma=(chs_points[-1].r - 0.5, 0.2),
+            d_radius_mean_and_sigma=(0.0, 0.0),
             coord_offset=start,
             rng=rng,
         )
@@ -57,8 +57,8 @@ def left_common_carotid_II(
             direction_mean=(0.6, 0.0, 1.0),
             direction_sigma=(0.2, 0.3, 0.3),
             direction_magnitude_mean_and_sigma=(1.5, 0.2),
-            diameter_mean_and_sigma=(10.0, 0.33),
-            d_diameter_mean_and_sigma=(0.0, 0.0),
+            radius_mean_and_sigma=(10.0, 0.33),
+            d_radius_mean_and_sigma=(0.0, 0.0),
             coord_offset=start,
             rng=rng,
         )
@@ -70,8 +70,8 @@ def left_common_carotid_II(
             direction_mean=(0.0, 0.0, 1.0),
             direction_sigma=(0.2, 0.3, 0.0),
             direction_magnitude_mean_and_sigma=(1.5, 0.2),
-            diameter_mean_and_sigma=(chs_points[-1].diameter - 0.5, 0.2),
-            d_diameter_mean_and_sigma=(0.0, 0.0),
+            radius_mean_and_sigma=(chs_points[-1].r - 0.5, 0.2),
+            d_radius_mean_and_sigma=(0.0, 0.0),
             coord_offset=start,
             rng=rng,
         )

@@ -19,8 +19,8 @@ def aorta_generator(
             direction_mean=(0, 0.0, 1),
             direction_sigma=(0.1, 0.00, 0.3),
             direction_magnitude_mean_and_sigma=(1.0, 0.1),
-            diameter_mean_and_sigma=(20.0, 1.0),
-            d_diameter_mean_and_sigma=(0.02, 0.005),
+            radius_mean_and_sigma=(20.0, 1.0),
+            d_radius_mean_and_sigma=(0.02, 0.005),
             rng=rng,
         )
     )
@@ -35,8 +35,8 @@ def aorta_generator(
             direction_mean=(1, 0, 2),
             direction_sigma=(0.4, 0.3, 0.2),
             direction_magnitude_mean_and_sigma=(1.2, 0.15),
-            diameter_mean_and_sigma=(chs_points[-1].diameter + 5, 0.7),
-            d_diameter_mean_and_sigma=(0.02, 0.005),
+            radius_mean_and_sigma=(chs_points[-1].r + 5, 0.7),
+            d_radius_mean_and_sigma=(0.02, 0.005),
             rng=rng,
         )
     )
@@ -47,8 +47,8 @@ def aorta_generator(
             direction_mean=(-4, -6, -0.5),
             direction_sigma=(0.8, 1, 0.7),
             direction_magnitude_mean_and_sigma=(1.4, 0.15),
-            diameter_mean_and_sigma=(chs_points[-1].diameter + 7, 0.7),
-            d_diameter_mean_and_sigma=(0.07, 0.008),
+            radius_mean_and_sigma=(chs_points[-1].r + 7, 0.7),
+            d_radius_mean_and_sigma=(0.07, 0.008),
             rng=rng,
         )
     )
@@ -60,8 +60,8 @@ def aorta_generator(
             direction_mean=(3, 4, -8),
             direction_sigma=(0.3, 0.3, 0.5),
             direction_magnitude_mean_and_sigma=(1.6, 0.15),
-            diameter_mean_and_sigma=(chs_points[-1].diameter + 8, 0.7),
-            d_diameter_mean_and_sigma=(0.0, 0.0),
+            radius_mean_and_sigma=(chs_points[-1].r + 8, 0.7),
+            d_radius_mean_and_sigma=(0.0, 0.0),
             rng=rng,
         )
     )
