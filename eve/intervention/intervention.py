@@ -1,6 +1,5 @@
 from typing import Dict, List
 import logging
-import threading
 import numpy as np
 import gymnasium as gym
 
@@ -138,20 +137,7 @@ class Intervention:
         self.last_action = action
 
         for _ in range(int((1 / self.image_frequency) / self.dt_simulation)):
-            step_finished = threading.Event()
-            step_thread = threading.Thread(
-                target=self._sofa_step, args=[action, step_finished]
-            )
-            step_thread.start()
-            if not step_finished.wait(self.timeout_step):
-                self.logger.warning(
-                    "Step Timeout triggered. Setting simulation_error flag"
-                )
-                self.simulation_error = True
-
-    def _sofa_step(self, action: np.ndarray, finished: threading.Event):
-        self._sofa_core.do_sofa_step(action)
-        finished.set()
+            self._sofa_core.do_sofa_step(action)
 
     def reset(self, episode_nr: int = 0, seed: int = None) -> None:
         # pylint: disable=unused-argument
