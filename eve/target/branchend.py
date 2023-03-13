@@ -5,7 +5,7 @@ from .centerlinerandom import CenterlineRandom
 
 class BranchEnd(CenterlineRandom):
     def _init_centerline_point_cloud(self):
-        self._potential_targets = np.empty((0, 3))
+        self.potential_targets = np.empty((0, 3))
         if self.branches is None:
             branch_keys = self.vessel_tree.keys()
         else:
@@ -13,9 +13,9 @@ class BranchEnd(CenterlineRandom):
         for branch in self.vessel_tree:
             if branch.name in branch_keys:
                 point = branch.coordinates[-1].reshape(1, -1)
-                if self._potential_targets is None:
-                    self._potential_targets = point
+                if self.potential_targets is None:
+                    self.potential_targets = point
                 else:
-                    self._potential_targets = np.concatenate(
-                        (self._potential_targets, point), axis=0
+                    self.potential_targets = np.concatenate(
+                        (self.potential_targets, point), axis=0
                     )

@@ -23,7 +23,7 @@ class CenterlineRandom(Target):
             min_distance_between_possible_targets
         )
 
-        self._potential_targets = None
+        self.potential_targets = None
         self._initialized_vesseltree = None
         self._rng = random.Random()
 
@@ -33,22 +33,23 @@ class CenterlineRandom(Target):
         high = self.vessel_tree.coordinate_space.high
         return gym.spaces.Box(low=low, high=high, dtype=np.float32)
 
-    def reset(self, episode_nr=0, seed: int = None) -> None:
+    def reset(self, episode_nr=0, seed=None) -> None:
+        super().reset(episode_nr, seed)
         if seed is not None:
             self._rng = random.Random(seed)
         if self._initialized_vesseltree != self.vessel_tree.branches:
             self._init_centerline_point_cloud()
             self._initialized_vesseltree = self.vessel_tree.branches
-        self.coordinates = self._rng.choice(self._potential_targets)
+        self.coordinates = self._rng.choice(self.potential_targets)
         self.reached = False
 
     def _init_centerline_point_cloud(self):
-        self._potential_targets = None
+        self.potential_targets = None
         if self.branches is None:
             branch_keys = self.vessel_tree.keys()
         else:
             branch_keys = set(self.branches) & set(self.vessel_tree.keys())
-        self._potential_targets = np.empty((0, 3))
+        self.potential_targets = np.empty((0, 3))
         for branch in branch_keys:
             points = self.vessel_tree[branch].coordinates
-            self._potential_targets = np.vstack((self._potential_targets, points))
+            self.potential_targets = np.vstack((self.potential_targets, points))

@@ -29,7 +29,7 @@ class BranchIndex(Target):
         high = self.vessel_tree.coordinate_space.high
         return gym.spaces.Box(low=low, high=high, dtype=np.float32)
 
-    def reset(self, episode_nr=0, seed: int = None) -> None:
+    def reset(self, episode_nr=0, seed = None) -> None:
         if self._branches != self.vessel_tree.branches:
             self.coordinates = self.vessel_tree[self.branch].coordinates[self.idx]
             self._branches = self.vessel_tree.branches

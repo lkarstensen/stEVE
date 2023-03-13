@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 import numpy as np
 import gymnasium as gym
 from ..intervention.intervention import Intervention
@@ -9,6 +10,7 @@ from ..util import EveObject
 class Target(EveObject, ABC):
     # Needs to be set by implementing classes in step() or reset():
     coordinates: np.ndarray
+    potential_targets: Optional[np.ndarray]
 
     def __init__(self, intervention: Intervention, threshold: float) -> None:
         self.intervention = intervention
@@ -21,9 +23,8 @@ class Target(EveObject, ABC):
     def coordinate_space(self) -> gym.spaces.Box:
         ...
 
-    @abstractmethod
-    def reset(self, episode_nr: int = 0, seed: int = None) -> None:
-        ...
+    def reset(self, episode_nr: int = 0, seed: Optional[int] = None) -> None:
+        self.reached = False
 
     def step(self) -> None:
         position = self.intervention.instrument_position_vessel_cs[0]
