@@ -99,7 +99,7 @@ class Env(gym.Env):
         self.vessel_tree.reset(self.episode_number, seed)
         self.intervention.reset(self.episode_number)
         self.start.reset(self.episode_number)
-        self.target.reset(self.episode_number)
+        self.target.reset(self.episode_number, seed)
         self.pathfinder.reset(self.episode_number)
         self.interim_target.reset(self.episode_number)
         self.imaging.reset(self.episode_number)

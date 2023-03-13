@@ -25,6 +25,7 @@ class CenterlineRandom(Target):
 
         self._potential_targets = None
         self._initialized_vesseltree = None
+        self._rng = random.Random()
 
     @property
     def coordinate_space(self) -> gym.spaces.Box:
@@ -32,11 +33,13 @@ class CenterlineRandom(Target):
         high = self.vessel_tree.coordinate_space.high
         return gym.spaces.Box(low=low, high=high, dtype=np.float32)
 
-    def reset(self, episode_nr=0) -> None:
+    def reset(self, episode_nr=0, seed: int = None) -> None:
+        if seed is not None:
+            self._rng = random.Random(seed)
         if self._initialized_vesseltree != self.vessel_tree.branches:
             self._init_centerline_point_cloud()
             self._initialized_vesseltree = self.vessel_tree.branches
-        self.coordinates = random.choice(self._potential_targets)
+        self.coordinates = self._rng.choice(self._potential_targets)
         self.reached = False
 
     def _init_centerline_point_cloud(self):

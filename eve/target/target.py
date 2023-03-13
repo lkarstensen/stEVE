@@ -22,7 +22,7 @@ class Target(EveObject, ABC):
         ...
 
     @abstractmethod
-    def reset(self, episode_nr: int = 0) -> None:
+    def reset(self, episode_nr: int = 0, seed: int = None) -> None:
         ...
 
     def step(self) -> None:
