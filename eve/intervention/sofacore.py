@@ -52,32 +52,35 @@ class SOFACore:
             rots = [0.0] * len(self.devices)
         return rots
 
-    def unload_simulation(self):
+    def close(self):
+        self._unload_simulation()
+
+    def _unload_simulation(self):
         if self.root is not None:
             self._sofa.Simulation.unload(self.root)
 
-    def do_sofa_step(self, action: np.ndarray):
+    def do_sofa_steps(self, action: np.ndarray, n_steps: int):
+        for _ in range(n_steps):
+            inserted_lengths = self.inserted_lengths
 
-        inserted_lengths = self.inserted_lengths
+            if len(self.devices) > 1:
+                max_id = np.argmax(inserted_lengths)
+                new_length = inserted_lengths + action[:, 0] / self.image_frequency
+                new_max_id = np.argmax(new_length)
+                if max_id != new_max_id:
+                    if abs(action[max_id, 0]) > abs(action[new_max_id, 0]):
+                        action[new_max_id, 0] = 0.0
+                    else:
+                        action[max_id, 0] = 0.0
 
-        if len(self.devices) > 1:
-            max_id = np.argmax(inserted_lengths)
-            new_length = inserted_lengths + action[:, 0] / self.image_frequency
-            new_max_id = np.argmax(new_length)
-            if max_id != new_max_id:
-                if abs(action[max_id, 0]) > abs(action[new_max_id, 0]):
-                    action[new_max_id, 0] = 0.0
-                else:
-                    action[max_id, 0] = 0.0
-
-        x_tip = self._instruments_combined.m_ircontroller.xtip
-        tip_rot = self._instruments_combined.m_ircontroller.rotationInstrument
-        for i in range(action.shape[0]):
-            x_tip[i] += float(action[i][0] * self.root.dt.value)
-            tip_rot[i] += float(action[i][1] * self.root.dt.value)
-        self._instruments_combined.m_ircontroller.xtip = x_tip
-        self._instruments_combined.m_ircontroller.rotationInstrument = tip_rot
-        self._sofa.Simulation.animate(self.root, self.root.dt.value)
+            x_tip = self._instruments_combined.m_ircontroller.xtip
+            tip_rot = self._instruments_combined.m_ircontroller.rotationInstrument
+            for i in range(action.shape[0]):
+                x_tip[i] += float(action[i][0] * self.root.dt.value)
+                tip_rot[i] += float(action[i][1] * self.root.dt.value)
+            self._instruments_combined.m_ircontroller.xtip = x_tip
+            self._instruments_combined.m_ircontroller.rotationInstrument = tip_rot
+            self._sofa.Simulation.animate(self.root, self.root.dt.value)
 
     def reset_sofa_devices(self):
 
@@ -101,7 +104,7 @@ class SOFACore:
         self._sofa = importlib.import_module("Sofa")
         self._sofa_runtime = importlib.import_module("SofaRuntime")
         if self.sofa_initialized:
-            self.unload_simulation()
+            self._unload_simulation()
         if self.root is None:
             self.root = self._sofa.Core.Node()
         self.root.gravity = [0.0, 0.0, 0.0]

@@ -1,12 +1,15 @@
-import eve
 import random
-
+import logging
+import eve
 
 if __name__ == "__main__":
-
+    FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    logging.basicConfig(format=FORMAT, level=logging.DEBUG)
     vessel_tree = eve.vesseltree.AorticArch(eve.vesseltree.ArchType.VII)
     device = eve.intervention.device.JWire()
-    simulation = eve.intervention.Intervention(vessel_tree, [device])
+    simulation = eve.intervention.Intervention(
+        vessel_tree, [device], sofacore_mp=True, timeout_step_mp=1, image_frequency=7.5
+    )
 
     start = eve.start.InsertionPoint(simulation)
     target = eve.target.CenterlineRandom(vessel_tree, simulation, threshold=10)
@@ -45,9 +48,10 @@ if __name__ == "__main__":
 
     for _ in range(3):
         env.reset()
-        for _ in range(100):
+        print("reset")
+        for _ in range(10):
             action = [[random.uniform(0, 10), random.uniform(-3.28, 3.28)]]
             s, r, term, trunc, i = env.step(action)
-            print(s)
+            print("step")
 
     env.close()

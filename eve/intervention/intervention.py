@@ -6,6 +6,7 @@ import gymnasium as gym
 from ..vesseltree import VesselTree
 from .device import Device
 from .sofacore import SOFACore
+from .sofacoremp import SOFACoreMP
 
 
 class Intervention:
@@ -18,7 +19,8 @@ class Intervention:
         stop_device_at_tree_end: bool = True,
         image_frequency: float = 7.5,
         dt_simulation: float = 0.006,
-        timeout_step: float = 2,
+        sofacore_mp: bool = False,
+        timeout_step_mp: float = 2,
     ) -> None:
         self.logger = logging.getLogger(self.__module__)
 
@@ -29,7 +31,8 @@ class Intervention:
         self.stop_device_at_tree_end = stop_device_at_tree_end
         self.image_frequency = image_frequency
         self.dt_simulation = dt_simulation
-        self.timeout_step = timeout_step
+        self.sofacore_mp = sofacore_mp
+        self.timeout_step_mp = timeout_step_mp
 
         velocity_limits = tuple(device.velocity_limit for device in devices)
         self.velocity_limits = np.array(velocity_limits, dtype=np.float32)
@@ -39,9 +42,16 @@ class Intervention:
         self.display_size = (1, 1)
 
         self._loaded_mesh = None
-        self._sofa_core = SOFACore(devices, image_frequency, dt_simulation)
-        self._image = np.empty(self.display_size)
-        self.simulation_error = False
+        if sofacore_mp:
+            self._sofa_core = SOFACoreMP(
+                devices, image_frequency, dt_simulation, timeout_step_mp
+            )
+        else:
+            self._sofa_core = SOFACore(devices, image_frequency, dt_simulation)
+
+    @property
+    def simulation_error(self) -> bool:
+        return self._sofa_core.simulation_error
 
     @property
     def tracking_space(self) -> gym.spaces.Box:
@@ -136,8 +146,9 @@ class Intervention:
 
         self.last_action = action
 
-        for _ in range(int((1 / self.image_frequency) / self.dt_simulation)):
-            self._sofa_core.do_sofa_step(action)
+        self._sofa_core.do_sofa_steps(
+            action, int((1 / self.image_frequency) / self.dt_simulation)
+        )
 
     def reset(self, episode_nr: int = 0, seed: int = None) -> None:
         # pylint: disable=unused-argument
@@ -158,7 +169,6 @@ class Intervention:
                 coords_high=self.vessel_tree.coordinate_space.high,
             )
             self._loaded_mesh = self.vessel_tree.mesh_path
-            self.simulation_error = False
 
     def reset_devices(self) -> None:
         self._sofa_core.reset_sofa_devices()
@@ -178,7 +188,7 @@ class Intervention:
         )
 
     def close(self):
-        self._sofa_core.unload_simulation()
+        self._sofa_core.close()
 
     def vessel_cs_to_tracking_cs(
         self,
