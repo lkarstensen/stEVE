@@ -63,6 +63,9 @@ class SOFACoreMP(SOFACore):
         self.sofa_initialized = False
         self.simulation_error = False
 
+        self.camera = None
+        self.root = None
+
         self._sofa_process: mp.Process = None
         self._task_queue: mp.Queue = None
         self._result_queue: mp.Queue = None
@@ -107,18 +110,6 @@ class SOFACoreMP(SOFACore):
         )
         self._last_rotations = rotations
         return rotations
-
-    @property
-    def camera(self):
-        if self._task_queue is not None:
-            self._task_queue.put(["camera", [], {}])
-            return self._get_result(timeout=self.step_timeout)
-
-    @property
-    def root(self):
-        if self._task_queue is not None:
-            self._task_queue.put(["root", [], {}])
-            return self._get_result(timeout=self.step_timeout)
 
     def close(self):
         self._close_sofa_process()
