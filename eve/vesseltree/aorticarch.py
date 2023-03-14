@@ -24,6 +24,8 @@ from .aorticarcharteries import (
 from .util import calc_insertion_from_branch_start
 from .util.meshing import generate_temp_mesh
 
+COORD_SPACE_BUFFER = 0.02
+
 
 class ArchType(str, Enum):
     I = "I"
@@ -71,14 +73,19 @@ class AorticArch(VesselTree):
 
             insertion_point, ip_dir = calc_insertion_from_branch_start(branches[0])
 
-            branch_highs = [branch.high for branch in branches]
+            branch_highs = np.array(
+                [branch.high for branch in branches], dtype=np.float32
+            )
             high = np.max(branch_highs, axis=0)
             branch_lows = [branch.low for branch in branches]
             low = np.min(branch_lows, axis=0)
 
+            low -= (high - low) * COORD_SPACE_BUFFER
+            high += (high - low) * COORD_SPACE_BUFFER
+            self.coordinate_space = gym.spaces.Box(low=low, high=high)
+
             self.branches = branches
             self.insertion = Insertion(insertion_point, ip_dir)
-            self.coordinate_space = gym.spaces.Box(low=low, high=high)
             self.branching_points = calc_branching(branches)
             self._mesh_path = None
 
