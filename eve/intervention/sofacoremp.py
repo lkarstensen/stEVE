@@ -133,6 +133,7 @@ class SOFACoreMP(SOFACore):
         display_size: Optional[Tuple[int, int]] = None,
         coords_high: Optional[Tuple[float, float, float]] = None,
         coords_low: Optional[Tuple[float, float, float]] = None,
+        target_size: Optional[float] = None,
     ):
         if self._sofa_process is None:
             self._new_sofa_process()

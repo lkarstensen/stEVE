@@ -1,4 +1,7 @@
 import importlib
+import math
+import os
+import random
 from typing import List, Optional, Tuple
 import logging
 import numpy as np
@@ -20,6 +23,7 @@ class SOFACore:
 
         self.root = None
         self.camera = None
+        self.target_node = None
         self.simulation_error = False
 
         self._vessel_object = None
@@ -100,6 +104,7 @@ class SOFACore:
         display_size: Optional[Tuple[int, int]] = None,
         coords_high: Optional[Tuple[float, float, float]] = None,
         coords_low: Optional[Tuple[float, float, float]] = None,
+        target_size: Optional[float] = None,
     ):
         self._sofa = importlib.import_module("Sofa")
         self._sofa_runtime = importlib.import_module("SofaRuntime")
@@ -116,7 +121,7 @@ class SOFACore:
             insertion_point=insertion_point, insertion_direction=insertion_direction
         )
         if add_visual:
-            self._add_visual(display_size, coords_low, coords_high)
+            self._add_visual(display_size, coords_low, coords_high, target_size)
 
         self._sofa.Simulation.init(self.root)
         self.sofa_initialized = True
@@ -276,7 +281,7 @@ class SOFACore:
                 interpolation="@Interpol_" + device.name,
             )
             x_tip.append(0.0)
-            rotations.append(0.0)
+            rotations.append(random.random() * math.pi * 2)
             interpolations += "Interpol_" + device.name + " "
         x_tip[0] += 0.1
         interpolations = interpolations[:-1]
@@ -334,6 +339,7 @@ class SOFACore:
         display_size: Tuple[int, int],
         coords_low: Tuple[float, float, float],
         coords_high: Tuple[float, float, float],
+        target_size: float,
     ):
         coords_low = np.array(coords_low)
         coords_high = np.array(coords_high)
@@ -399,7 +405,41 @@ class SOFACore:
                 output="@Visual",
             )
 
+        # Target
+        # TODO: Fix necessary translation of ogl_model. Maybe unite_sphere.obj with center in origin?
+        file_dir = os.path.dirname(os.path.realpath(__file__))
+        mesh_path = os.path.join(file_dir, "util", "unit_sphere.stl")
+        target_node = self.root.addChild("main_target")
+        target_node.addObject(
+            "MeshSTLLoader",
+            name="loader",
+            triangulate=True,
+            filename=mesh_path,
+            scale=target_size,
+            translation=[0, 0, 0],
+        )
+        target_node.addObject(
+            "MechanicalObject",
+            src="@loader",
+            translation=(0, 0, 0),
+            template="Rigid3d",
+            name="MechanicalObject",
+        )
+        size_half = target_size / 2
+        target_node.addObject(
+            "OglModel",
+            src="@loader",
+            color=[0.0, 0.9, 0.5, 0.8],
+            translation=[0, 0, -size_half],
+            material="texture Ambient 1 0.2 0.2 0.2 0.0 Diffuse 1 1.0 1.0 1.0 1.0 Specular 1 1.0 1.0 1.0 1.0 Emissive 0 0.15 0.05 0.05 0.0 Shininess 1 20",
+            name="ogl_model",
+        )
+        target_node.addObject("RigidMapping", input="@MechanicalObject")
+        self.target_node = target_node
+
         # Camera
+        # TODO: Find out how to manipulate background. BackgroundSetting doesn't seem to work
+        # self.root.addObject("BackgroundSetting", color=(0.5, 0.5, 0.5, 1.0))
         self.root.addObject("DefaultVisualManagerLoop")
         self.root.addObject(
             "VisualStyle",
@@ -413,9 +453,6 @@ class SOFACore:
         self.root.addObject("LightManager")
         self.root.addObject("DirectionalLight", direction=[0, -1, 0])
         self.root.addObject("DirectionalLight", direction=[0, 1, 0])
-
-        # TODO: Find out how to manipulate background. BackgroundSetting doesn't seem to work
-        # self.root.addObject("BackgroundSetting", color=(0.5, 0.5, 0.5, 1.0))
 
         look_at = (coords_high + coords_low) * 0.5
         distance_coefficient = 1.5

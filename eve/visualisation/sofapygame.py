@@ -9,7 +9,7 @@ from ..intervention import Intervention
 from ..interimtarget import InterimTarget, InterimTargetDummy
 from ..target import Target as TargetClass
 
-# TODO: Implement Target Plot
+
 class SofaPygame(Visualisation):
     def __init__(
         self,
@@ -25,11 +25,13 @@ class SofaPygame(Visualisation):
 
         self.intervention.init_visual_nodes = True
         self.intervention.display_size = display_size
+        if target is not None:
+            self.intervention.target_size = target.threshold
 
         self.initial_orientation = None
         self._initialized = False
-        self._theta_x = None
-        self._theta_z = None
+        self._theta_x = intervention.cra_cau_deg * np.pi / 180
+        self._theta_z = intervention.lao_rao_deg * np.pi / 180
         self._initial_direction = None
         self._distance = None
         self._sofa = importlib.import_module("Sofa")
@@ -77,10 +79,11 @@ class SofaPygame(Visualisation):
 
     def reset(self, episode_nr: int = 0) -> None:
         # pylint: disable=no-member
-
-        pygame.display.init()
-        flags = pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE
-        pygame.display.set_mode(self.display_size, flags)
+        if not self._initialized:
+            pygame.display.init()
+            flags = pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE
+            pygame.display.set_mode(self.display_size, flags)
+            self._initialized = True
 
         gl = self._opengl_gl
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -111,16 +114,24 @@ class SofaPygame(Visualisation):
                 camera.orientation[2],
             ]
         )
-        self._theta_x = 0
-        self._theta_z = 0
         position = camera.position
         look_at = camera.lookAt
         self._initial_direction = position - look_at
         self._distance = np.linalg.norm(self._initial_direction)
         self._initial_direction = self._initial_direction / self._distance
+        self._theta_x = self.intervention.cra_cau_deg * np.pi / 180
+        self._theta_z = self.intervention.lao_rao_deg * np.pi / 180
+        self.rotate(0, 0)
+        if self.target is not None:
+            target = self.target.coordinates
+            self.intervention.sofa_target_node.MechanicalObject.translation = [
+                target[0],
+                target[1],
+                target[2],
+            ]
+            self._sofa.Simulation.init(self.intervention.sofa_target_node)
 
     def close(self):
-
         pygame.quit()  # pylint: disable=no-member
 
     def translate(self, velocity: np.array):

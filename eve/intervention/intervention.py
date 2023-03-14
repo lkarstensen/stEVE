@@ -40,6 +40,7 @@ class Intervention:
 
         self.init_visual_nodes = False
         self.display_size = (1, 1)
+        self.target_size = 1
 
         self._loaded_mesh = None
         if sofacore_mp:
@@ -127,6 +128,10 @@ class Intervention:
     def sofa_root(self):
         return self._sofa_core.root
 
+    @property
+    def sofa_target_node(self):
+        return self._sofa_core.target_node
+
     def step(self, action: np.ndarray) -> None:
         action = np.array(action).reshape(self.action_space.shape)
         action = np.clip(action, -self.velocity_limits, self.velocity_limits)
@@ -167,6 +172,7 @@ class Intervention:
                 display_size=self.display_size,
                 coords_low=self.vessel_tree.coordinate_space.low,
                 coords_high=self.vessel_tree.coordinate_space.high,
+                target_size=self.target_size,
             )
             self._loaded_mesh = self.vessel_tree.mesh_path
 
