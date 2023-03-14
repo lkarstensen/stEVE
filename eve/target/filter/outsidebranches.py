@@ -37,6 +37,7 @@ class OutsideBranches(Target):
             in_forbidden = self._in_forbidden_branches(pot_targets)
             outside_forbidden = np.invert(in_forbidden)
             self.potential_targets = pot_targets[outside_forbidden]
+            self._initialized_potential_targets = self.wrapped_target.potential_targets
 
         self.coordinates = self._rng.choice(self.potential_targets)
         self.reached = False
