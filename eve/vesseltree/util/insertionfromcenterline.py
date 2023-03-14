@@ -4,7 +4,7 @@ import numpy as np
 
 
 def calc_insertion_from_branch_start(branch: Branch) -> Tuple[np.ndarray, np.ndarray]:
-    return calc_insertion(branch, 0, 1)
+    return calc_insertion(branch, 1, 2)
 
 
 def calc_insertion(branch: Branch, idx_0, idx_1) -> Tuple[np.ndarray, np.ndarray]:
