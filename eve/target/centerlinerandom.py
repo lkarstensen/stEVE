@@ -49,6 +49,7 @@ class CenterlineRandom(Target):
             branch_keys = self.vessel_tree.keys()
         else:
             branch_keys = set(self.branches) & set(self.vessel_tree.keys())
+        branch_keys = sorted(branch_keys)
         self.potential_targets = np.empty((0, 3))
         for branch in branch_keys:
             points = self.vessel_tree[branch].coordinates
