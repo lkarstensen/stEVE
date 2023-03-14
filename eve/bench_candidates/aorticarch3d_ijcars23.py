@@ -60,7 +60,6 @@ class AorticArch3D(eve.Env):
             target, vessel_tree, branches_to_avoid=["aorta"]
         )
 
-        success = eve.success.TargetReached(target)
         pathfinder = eve.pathfinder.BruteForceBFS(vessel_tree, simulation, target)
 
         # Observation
@@ -94,7 +93,7 @@ class AorticArch3D(eve.Env):
         truncation = eve.truncation.MaxSteps(MAX_STEPS)
 
         if visualisation:
-            visu = eve.visualisation.SofaPygame(simulation)
+            visu = eve.visualisation.SofaPygame(simulation, target=target)
         else:
             visu = None
         super().__init__(
@@ -102,7 +101,6 @@ class AorticArch3D(eve.Env):
             simulation,
             target,
             start,
-            success,
             observation,
             reward,
             terminal,
