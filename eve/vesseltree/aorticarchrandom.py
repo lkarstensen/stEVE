@@ -27,7 +27,7 @@ class AorticArchRandom(VesselTree):
         self.scale_width_array = scale_width_array
         self.scale_heigth_array = scale_heigth_array
         self.scale_diameter_array = scale_diameter_array
-        self.seeds_vessel = seeds_vessel or [None]
+        self.seeds_vessel = seeds_vessel
         self.arch_types_filter = arch_types_filter
         self.rotate_y_deg_array = rotate_y_deg_array or [0.0]
         self.rotate_z_deg_array = rotate_z_deg_array or [0.0]
@@ -44,25 +44,24 @@ class AorticArchRandom(VesselTree):
             self._arch_types = all_archtypes
 
         self._rng = random.Random(seed_random)
-        self._vessel_tree: AorticArch = None
+        self.aortic_arch: AorticArch = None
 
     @property
     def mesh_path(self) -> str:
-        return self._vessel_tree.mesh_path
+        return self.aortic_arch.mesh_path
 
     def reset(self, episode_nr=0, seed: int = None) -> None:
+        if self.aortic_arch is None:
+            self._calc_coordinate_space(self.n_coordinate_space_iters)
         if seed is not None:
             self._rng = random.Random(seed)
-        if self._vessel_tree is None:
-            self._calc_coordinate_space(self.n_coordinate_space_iters)
-            self._vessel_tree = self._randomize_vessel()
-        elif episode_nr % self.episodes_between_change == 0:
-            self._vessel_tree = self._randomize_vessel()
+        if self.aortic_arch is None or episode_nr % self.episodes_between_change == 0:
+            self.aortic_arch = self._randomize_vessel()
 
-        self._vessel_tree.reset(episode_nr, seed)
-        self.branches = self._vessel_tree.branches
-        self.insertion = self._vessel_tree.insertion
-        self.branching_points = self._vessel_tree.branching_points
+        self.aortic_arch.reset(episode_nr, seed)
+        self.branches = self.aortic_arch.branches
+        self.insertion = self.aortic_arch.insertion
+        self.branching_points = self.aortic_arch.branching_points
 
     def _calc_coordinate_space(self, iterations) -> None:
         width_high = np.max(self.scale_width_array)
@@ -89,7 +88,11 @@ class AorticArchRandom(VesselTree):
         )
         for _ in range(iterations):
             for archtype, rot_x, rot_y, rot_z in combinations:
-                vessel_seed = self._rng.choice(self.seeds_vessel)
+                vessel_seed = (
+                    self._rng.choice(self.seeds_vessel)
+                    if self.seeds_vessel is not None
+                    else self._rng.randint(0, 2**31)
+                )
                 vessel = AorticArch(
                     archtype,
                     vessel_seed,
@@ -104,7 +107,11 @@ class AorticArchRandom(VesselTree):
 
     def _randomize_vessel(self):
         arch_type = self._rng.choice(self._arch_types)
-        vessel_seed = self._rng.choice(self.seeds_vessel)
+        vessel_seed = (
+            self._rng.choice(self.seeds_vessel)
+            if self.seeds_vessel is not None
+            else self._rng.randint(0, 2**31)
+        )
         xy_scaling = self._rng.choice(self.scale_width_array)
         z_scaling = self._rng.choice(self.scale_heigth_array)
         diameter_scaling = self._rng.choice(self.scale_diameter_array)
