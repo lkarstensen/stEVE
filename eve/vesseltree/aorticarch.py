@@ -24,7 +24,7 @@ from .aorticarcharteries import (
 from .util import calc_insertion_from_branch_start
 from .util.meshing import generate_temp_mesh
 
-COORD_SPACE_BUFFER = 0.02
+COORD_SPACE_BUFFER = 0.00
 
 
 class ArchType(str, Enum):
@@ -53,7 +53,15 @@ class AorticArch(VesselTree):
         self.omit_axis = omit_axis
 
         self._mesh_path = None
+        self.centerline_coordinates = np.array([[0, 0, 0], [1, 1, 1]], dtype=np.float32)
+        self.coordinate_space = gym.spaces.Box(
+            low=self.centerline_coordinates[0], high=self.centerline_coordinates[1]
+        )
         self.branches = None
+        self.insertion = Insertion(
+            self.centerline_coordinates[0], self.centerline_coordinates[1]
+        )
+        self.branching_points = None
 
     @property
     def mesh_path(self) -> str:
@@ -63,31 +71,35 @@ class AorticArch(VesselTree):
 
     def reset(self, episode_nr=0, seed: int = None) -> None:
         if self.branches is None:
-            branches = self._generate_branches()
-            if self.rotate_yzx_deg is not None:
-                branches = rotate(branches, self.rotate_yzx_deg)
-            if self.scale_xyzd is not None:
-                branches = scale(branches, self.scale_xyzd)
-            if self.omit_axis is not None:
-                branches = fill_axis_with_dummy_value(branches, self.omit_axis)
+            self._generate_vesseltree()
 
-            insertion_point, ip_dir = calc_insertion_from_branch_start(branches[0])
+    def _generate_vesseltree(self):
+        branches = self._generate_branches()
+        if self.rotate_yzx_deg is not None:
+            branches = rotate(branches, self.rotate_yzx_deg)
+        if self.scale_xyzd is not None:
+            branches = scale(branches, self.scale_xyzd)
+        if self.omit_axis is not None:
+            branches = fill_axis_with_dummy_value(branches, self.omit_axis)
 
-            branch_highs = np.array(
-                [branch.high for branch in branches], dtype=np.float32
-            )
-            high = np.max(branch_highs, axis=0)
-            branch_lows = [branch.low for branch in branches]
-            low = np.min(branch_lows, axis=0)
+        insertion_point, ip_dir = calc_insertion_from_branch_start(branches[0])
 
-            low -= (high - low) * COORD_SPACE_BUFFER
-            high += (high - low) * COORD_SPACE_BUFFER
-            self.coordinate_space = gym.spaces.Box(low=low, high=high)
+        centerline_coordinates = [branch.coordinates for branch in branches]
+        self.centerline_coordinates = np.concatenate(centerline_coordinates)
 
-            self.branches = branches
-            self.insertion = Insertion(insertion_point, ip_dir)
-            self.branching_points = calc_branching(branches)
-            self._mesh_path = None
+        branch_highs = np.array([branch.high for branch in branches], dtype=np.float32)
+        high = np.max(branch_highs, axis=0)
+        branch_lows = [branch.low for branch in branches]
+        low = np.min(branch_lows, axis=0)
+
+        low -= (high - low) * COORD_SPACE_BUFFER
+        high += (high - low) * COORD_SPACE_BUFFER
+        self.coordinate_space = gym.spaces.Box(low=low, high=high)
+
+        self.branches = branches
+        self.insertion = Insertion(insertion_point, ip_dir)
+        self.branching_points = calc_branching(branches)
+        self._mesh_path = None
 
     def _generate_branches(self) -> Tuple[Branch]:
         rng = np.random.default_rng(self.seed)
@@ -115,6 +127,12 @@ class AorticArch(VesselTree):
         elif self.arch_type == ArchType.Vb:
             branches = self._create_Vb(rng, normal, aorta_resolution, aorta)
 
+        # TODO: Change this after IJCARS23
+        # elif self.arch_type == ArchType.V:
+        #     if rng.random() < 0.5:
+        #         branches = self._create_Va(rng, normal, aorta_resolution, aorta)
+        #     else:
+        #         branches = self._create_Vb(rng, normal, aorta_resolution, aorta)
         elif self.arch_type == ArchType.VI:
             branches = self._create_VI(rng, normal, aorta_resolution, aorta)
 
