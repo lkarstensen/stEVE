@@ -96,10 +96,12 @@ class Env(gym.Env):
         options: Optional[Dict[str, Any]] = None,
     ) -> Tuple[ObsType, Dict[str, Any]]:
         super().reset(seed=seed)
-        self.vessel_tree.reset(self.episode_number, seed)
+        vessel_seed = None if seed is None else self._np_random.integers(0, 2**31)
+        self.vessel_tree.reset(self.episode_number, vessel_seed)
         self.intervention.reset(self.episode_number)
         self.start.reset(self.episode_number)
-        self.target.reset(self.episode_number, seed)
+        target_seed = None if seed is None else self._np_random.integers(0, 2**31)
+        self.target.reset(self.episode_number, target_seed)
         self.pathfinder.reset(self.episode_number)
         self.interim_target.reset(self.episode_number)
         self.imaging.reset(self.episode_number)
