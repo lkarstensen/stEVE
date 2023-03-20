@@ -63,6 +63,14 @@ class Intervention:
         return gym.spaces.Box(low=low, high=high)
 
     @property
+    def tracking3d_space(self) -> gym.spaces.Box:
+        low = self.vessel_tree.coordinate_space.low
+        high = self.vessel_tree.coordinate_space.high
+        low = self.vessel_cs_to_tracking3d_cs(low)
+        high = self.vessel_cs_to_tracking3d_cs(high)
+        return gym.spaces.Box(low=low, high=high)
+
+    @property
     def action_space(self) -> gym.spaces.Box:
         low = -self.velocity_limits
         high = self.velocity_limits
@@ -76,6 +84,12 @@ class Intervention:
     def tracking(self) -> np.ndarray:
         tracking = self.instrument_position_vessel_cs
         tracking = self.vessel_cs_to_tracking_cs(tracking)
+        return tracking
+
+    @property
+    def tracking3d(self) -> np.ndarray:
+        tracking = self.instrument_position_vessel_cs
+        tracking = self.vessel_cs_to_tracking3d_cs(tracking)
         return tracking
 
     @property
@@ -131,6 +145,15 @@ class Intervention:
     @property
     def sofa_target_node(self):
         return self._sofa_core.target_node
+
+    def get_tracking_space_episode(self):
+        cl_coordinates = self.vessel_tree.centerline_coordinates
+        low = np.min(cl_coordinates, axis=0)
+        high = np.max(cl_coordinates, axis=0)
+        low = self.vessel_cs_to_tracking_cs(low)
+        high = self.vessel_cs_to_tracking_cs(high)
+        space = gym.spaces.Box(low=low, high=high)
+        return space
 
     def step(self, action: np.ndarray) -> None:
         action = np.array(action).reshape(self.action_space.shape)
@@ -200,6 +223,14 @@ class Intervention:
         self,
         array: np.ndarray,
     ):
+        rotated_array = self.vessel_cs_to_tracking3d_cs(array)
+        rotated_array = np.delete(rotated_array, 1, axis=-1)
+        return rotated_array
+
+    def vessel_cs_to_tracking3d_cs(
+        self,
+        array: np.ndarray,
+    ):
         lao_rao_rad = self.lao_rao_deg * np.pi / 180
         cra_cau_rad = self.cra_cau_deg * np.pi / 180
 
@@ -220,8 +251,7 @@ class Intervention:
             ],
             dtype=np.float32,
         )
-        rotation_matrix = np.matmul(rotation_matrix_cra_cau, rotation_matrix_lao_rao)
+        rotation_matrix = np.matmul(rotation_matrix_lao_rao, rotation_matrix_cra_cau)
         # transpose such that matrix multiplication works
-        rotated_array = np.matmul(rotation_matrix, array.T).T
-        rotated_array = np.delete(rotated_array, 1, axis=-1)
+        rotated_array = np.matmul(array, rotation_matrix)
         return rotated_array
