@@ -4,3 +4,4 @@ from .combination import Combination
 from .maxsteps import MaxSteps
 from .dummy import Dummy as TruncationDummy
 from .vesselend import VesselEnd
+from .simerror import SimError
