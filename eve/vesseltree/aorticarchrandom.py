@@ -44,24 +44,37 @@ class AorticArchRandom(VesselTree):
             self._arch_types = all_archtypes
 
         self._rng = random.Random(seed_random)
-        self.aortic_arch: AorticArch = None
+        self._calc_coordinate_space(self.n_coordinate_space_iters)
+        self.aortic_arch: AorticArch = self._randomize_vessel()
+
+    @property
+    def branches(self):
+        return self.aortic_arch.branches
+
+    @property
+    def insertion(self):
+        return self.aortic_arch.insertion
+
+    @property
+    def branching_points(self):
+        return self.aortic_arch.branching_points
+
+    @property
+    def centerline_coordinates(self):
+        return self.aortic_arch.centerline_coordinates
 
     @property
     def mesh_path(self) -> str:
         return self.aortic_arch.mesh_path
 
     def reset(self, episode_nr=0, seed: int = None) -> None:
-        if self.aortic_arch is None:
-            self._calc_coordinate_space(self.n_coordinate_space_iters)
         if seed is not None:
             self._rng = random.Random(seed)
-        if self.aortic_arch is None or episode_nr % self.episodes_between_change == 0:
+        elif self.seed_random is None:
+            self._rng = random.Random(self.seed_random)
+        if episode_nr % self.episodes_between_change == 0:
             self.aortic_arch = self._randomize_vessel()
-
         self.aortic_arch.reset(episode_nr, seed)
-        self.branches = self.aortic_arch.branches
-        self.insertion = self.aortic_arch.insertion
-        self.branching_points = self.aortic_arch.branching_points
 
     def _calc_coordinate_space(self, iterations) -> None:
         width_high = np.max(self.scale_width_array)
@@ -110,7 +123,7 @@ class AorticArchRandom(VesselTree):
         vessel_seed = (
             self._rng.choice(self.seeds_vessel)
             if self.seeds_vessel is not None
-            else self._rng.randint(0, 2**31)
+            else self._rng.randint(0, 2**31 - 1)
         )
         xy_scaling = self._rng.choice(self.scale_width_array)
         z_scaling = self._rng.choice(self.scale_heigth_array)
