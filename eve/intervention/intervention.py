@@ -20,7 +20,8 @@ class Intervention:
         image_frequency: float = 7.5,
         dt_simulation: float = 0.006,
         sofacore_mp: bool = False,
-        timeout_step_mp: float = 2,
+        mp_timeout_step: float = 2,
+        mp_restart_n_resets: int = 200,
     ) -> None:
         self.logger = logging.getLogger(self.__module__)
 
@@ -32,7 +33,8 @@ class Intervention:
         self.image_frequency = image_frequency
         self.dt_simulation = dt_simulation
         self.sofacore_mp = sofacore_mp
-        self.timeout_step_mp = timeout_step_mp
+        self.mp_timeout_step = mp_timeout_step
+        self.mp_restart_n_resets = mp_restart_n_resets
 
         velocity_limits = tuple(device.velocity_limit for device in devices)
         self.velocity_limits = np.array(velocity_limits, dtype=np.float32)
@@ -42,10 +44,13 @@ class Intervention:
         self.display_size = (1, 1)
         self.target_size = 1
 
-        self._loaded_mesh = None
         if sofacore_mp:
             self._sofa_core = SOFACoreMP(
-                devices, image_frequency, dt_simulation, timeout_step_mp
+                devices,
+                image_frequency,
+                dt_simulation,
+                mp_timeout_step,
+                mp_restart_n_resets,
             )
         else:
             self._sofa_core = SOFACore(devices, image_frequency, dt_simulation)
@@ -180,24 +185,19 @@ class Intervention:
 
     def reset(self, episode_nr: int = 0, seed: int = None) -> None:
         # pylint: disable=unused-argument
-        if (
-            self._loaded_mesh != self.vessel_tree.mesh_path
-            or not self._sofa_core.sofa_initialized
-            or self.simulation_error
-        ):
-            ip_pos = self.vessel_tree.insertion.position
-            ip_dir = self.vessel_tree.insertion.direction
-            self._sofa_core.init_sofa(
-                insertion_point=ip_pos,
-                insertion_direction=ip_dir,
-                mesh_path=self.vessel_tree.mesh_path,
-                add_visual=self.init_visual_nodes,
-                display_size=self.display_size,
-                coords_low=self.vessel_tree.coordinate_space.low,
-                coords_high=self.vessel_tree.coordinate_space.high,
-                target_size=self.target_size,
-            )
-            self._loaded_mesh = self.vessel_tree.mesh_path
+
+        ip_pos = self.vessel_tree.insertion.position
+        ip_dir = self.vessel_tree.insertion.direction
+        self._sofa_core.reset(
+            insertion_point=ip_pos,
+            insertion_direction=ip_dir,
+            mesh_path=self.vessel_tree.mesh_path,
+            add_visual=self.init_visual_nodes,
+            display_size=self.display_size,
+            coords_low=self.vessel_tree.coordinate_space.low,
+            coords_high=self.vessel_tree.coordinate_space.high,
+            target_size=self.target_size,
+        )
 
     def reset_devices(self) -> None:
         self._sofa_core.reset_sofa_devices()
@@ -206,7 +206,7 @@ class Intervention:
         # self._sofa_core.reload_sofa()
         ip_pos = self.vessel_tree.insertion.position
         ip_dir = self.vessel_tree.insertion.direction
-        self._sofa_core.init_sofa(
+        self._sofa_core.reset(
             insertion_point=ip_pos,
             insertion_direction=ip_dir,
             mesh_path=self.vessel_tree.mesh_path,

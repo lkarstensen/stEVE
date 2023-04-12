@@ -52,6 +52,7 @@ class SOFACoreMP(SOFACore):
         image_frequency: float = 7.5,
         dt_simulation: float = 0.006,
         step_timeout: float = 2,
+        restart_n_resets: int = 200,
     ) -> None:
         self.logger = logging.getLogger(self.__module__)
 
@@ -59,8 +60,10 @@ class SOFACoreMP(SOFACore):
         self.image_frequency = image_frequency
         self.dt_simulation = dt_simulation
         self.step_timeout = step_timeout
+        self.restart_n_resets = restart_n_resets
 
-        self.sofa_initialized = False
+        self._reset_count = 0
+
         self.simulation_error = False
 
         self.camera = None
@@ -73,6 +76,10 @@ class SOFACoreMP(SOFACore):
         self._last_dof_positions = np.array([[0.0, 0.0, 0.0]])
         self._last_inserted_lengths = [0.0] * len(self.devices)
         self._last_rotations = [0.0] * len(self.devices)
+
+        self._insertion_point = np.empty(())
+        self._insertion_direction = np.empty(())
+        self._mesh_path: str = None
 
     @property
     def dof_positions(self) -> np.ndarray:
@@ -124,7 +131,7 @@ class SOFACoreMP(SOFACore):
             self._task_queue.put(["reset_sofa_devices", [], {}])
             self._get_result(timeout=self.step_timeout)
 
-    def init_sofa(
+    def reset(
         self,
         insertion_point,
         insertion_direction,
@@ -135,14 +142,32 @@ class SOFACoreMP(SOFACore):
         coords_low: Optional[Tuple[float, float, float]] = None,
         target_size: Optional[float] = None,
     ):
+
         if self._sofa_process is None:
             self._new_sofa_process()
-        self._task_queue.put(
-            ["init_sofa", [insertion_point, insertion_direction, mesh_path, False], {}]
-        )
-        self._get_result(timeout=30)
-        self.simulation_error = False
-        self.sofa_initialized = True
+        elif self._reset_count > 0 and self._reset_count % self.restart_n_resets == 0:
+            self._close_sofa_process()
+            self._new_sofa_process()
+
+        if (
+            np.any(insertion_point != self._insertion_point)
+            or np.any(insertion_direction != self._insertion_direction)
+            or mesh_path != self._mesh_path
+        ):
+            self._task_queue.put(
+                [
+                    "reset",
+                    [insertion_point, insertion_direction, mesh_path, False],
+                    {},
+                ]
+            )
+
+            self._get_result(timeout=30)
+            self.simulation_error = False
+            self._insertion_point = insertion_point
+            self._insertion_direction = insertion_direction
+            self._mesh_path = mesh_path
+        self._reset_count += 1
 
     def _new_sofa_process(self):
         self.logger.debug("Starting new sofa process")
@@ -163,6 +188,10 @@ class SOFACoreMP(SOFACore):
             ],
         )
         self._sofa_process.start()
+        self._reset_count = 0
+        self._insertion_point = np.empty(())
+        self._insertion_direction = np.empty(())
+        self._mesh_path = None
 
     def _get_result(self, timeout: float, default_value: Any = -1):
         try:
@@ -194,4 +223,3 @@ class SOFACoreMP(SOFACore):
         self._task_queue = None
         self._result_queue.close()
         self._result_queue = None
-        self.sofa_initialized = False

@@ -28,11 +28,18 @@ class SOFACore:
 
         self._vessel_object = None
         self._instruments_combined = None
-        self._device_dofs = []
-        self.sofa_initialized = False
 
         self._sofa = None
         self._sofa_runtime = None
+
+        self._insertion_point = np.empty(())
+        self._insertion_direction = np.empty(())
+        self._mesh_path: str = None
+        self._reset_add_visual: bool = None
+        self._display_size = None
+        self._coords_high = np.empty(())
+        self._coords_low = np.empty(())
+        self._target_size = None
 
     @property
     def dof_positions(self) -> np.ndarray:
@@ -95,7 +102,7 @@ class SOFACore:
         self._instruments_combined.m_ircontroller.indexFirstNode.value = 0
         self._sofa.Simulation.reset(self.root)
 
-    def init_sofa(
+    def reset(
         self,
         insertion_point,
         insertion_direction,
@@ -106,27 +113,51 @@ class SOFACore:
         coords_low: Optional[Tuple[float, float, float]] = None,
         target_size: Optional[float] = None,
     ):
-        self._sofa = importlib.import_module("Sofa")
-        self._sofa_runtime = importlib.import_module("SofaRuntime")
-        if self.sofa_initialized:
-            self._unload_simulation()
-        if self.root is None:
-            self.root = self._sofa.Core.Node()
-        self.root.gravity = [0.0, 0.0, 0.0]
-        self.root.dt = self.dt_simulation
-        self._load_plugins()
-        self._basic_setup()
-        self._add_vessel_tree(mesh_path=mesh_path)
-        self._add_device(
-            insertion_point=insertion_point, insertion_direction=insertion_direction
-        )
-        if add_visual:
-            self._add_visual(display_size, coords_low, coords_high, target_size)
+        if self._sofa is None:
+            self._sofa = importlib.import_module("Sofa")
+        if self._sofa_runtime is None:
+            self._sofa_runtime = importlib.import_module("SofaRuntime")
 
-        self._sofa.Simulation.init(self.root)
-        self.sofa_initialized = True
-        self.simulation_error = False
-        self.logger.debug("Sofa Initialized")
+        if (
+            self.root is None
+            or np.any(insertion_point != self._insertion_point)
+            or np.any(insertion_direction != self._insertion_direction)
+            or mesh_path != self._mesh_path
+            or add_visual != self._reset_add_visual
+            or display_size != self._display_size
+            or np.any(coords_high != self._coords_high)
+            or np.any(coords_low != self._coords_low)
+            or target_size != self._target_size
+        ):
+
+            if self.root is None:
+                self.root = self._sofa.Core.Node()
+            else:
+                self._unload_simulation()
+
+            self.root.gravity = [0.0, 0.0, 0.0]
+            self.root.dt = self.dt_simulation
+            self._load_plugins()
+            self._basic_setup()
+            self._add_vessel_tree(mesh_path=mesh_path)
+            self._add_device(
+                insertion_point=insertion_point, insertion_direction=insertion_direction
+            )
+            if add_visual:
+                self._add_visual(display_size, coords_low, coords_high, target_size)
+
+            self._sofa.Simulation.init(self.root)
+
+            self._insertion_point = insertion_point
+            self._insertion_direction = insertion_direction
+            self._mesh_path = mesh_path
+            self._reset_add_visual = add_visual
+            self._display_size = display_size
+            self._coords_high = coords_high
+            self._coords_low = coords_low
+            self._target_size = target_size
+            self.simulation_error = False
+            self.logger.debug("Sofa Initialized")
 
     def _load_plugins(self):
         self.root.addObject(
