@@ -99,6 +99,13 @@ class VMR(VesselTree):
         self.insertion = None
         self.branching_points = None
         self._mesh_path = None
+        self.centerline_coordinates = np.array([[0, 0, 0], [1, 1, 1]], dtype=np.float32)
+        self.coordinate_space = gym.spaces.Box(
+            low=self.centerline_coordinates[0], high=self.centerline_coordinates[1]
+        )
+        self.insertion = Insertion(
+            self.centerline_coordinates[0], self.centerline_coordinates[1]
+        )
 
         self._model_folder = download_vmr_files(model)
         self._mesh_folder = os.path.join(self._model_folder, "Meshes")
@@ -137,6 +144,8 @@ class VMR(VesselTree):
         branch_lows = [branch.low for branch in branches]
         low = np.min(branch_lows, axis=0)
         self.coordinate_space = gym.spaces.Box(low=low, high=high)
+        centerline_coordinates = [branch.coordinates for branch in branches]
+        self.centerline_coordinates = np.concatenate(centerline_coordinates)
 
     def _make_mesh_obj(self):
         mesh_path = _get_vtk_file(self._mesh_folder, ".vtp")

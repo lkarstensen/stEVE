@@ -11,9 +11,9 @@ class AorticArchRandom(VesselTree):
     def __init__(
         self,
         seed_random: Optional[int] = None,
-        scale_width_array: List[float] = np.linspace(0.7, 1.3, 200, endpoint=True),
-        scale_heigth_array: List[float] = np.linspace(0.7, 1.3, 200, endpoint=True),
-        scale_diameter_array: List[float] = np.linspace(0.7, 1.3, 200, endpoint=True),
+        scale_width_array: Optional[List[float]] = None,
+        scale_heigth_array: Optional[List[float]] = None,
+        scale_diameter_array: Optional[List[float]] = None,
         arch_types_filter: Optional[List[ArchType]] = None,
         seeds_vessel: Optional[List[int]] = None,
         rotate_y_deg_array: Optional[List[float]] = None,
@@ -23,10 +23,17 @@ class AorticArchRandom(VesselTree):
         n_coordinate_space_iters: int = 5,
         episodes_between_change: int = 1,
     ) -> None:
+
         self.seed_random = seed_random
-        self.scale_width_array = scale_width_array
-        self.scale_heigth_array = scale_heigth_array
-        self.scale_diameter_array = scale_diameter_array
+        self.scale_width_array = scale_width_array or np.linspace(
+            0.7, 1.3, 200, endpoint=True
+        )
+        self.scale_heigth_array = scale_heigth_array or np.linspace(
+            0.7, 1.3, 200, endpoint=True
+        )
+        self.scale_diameter_array = scale_diameter_array or np.linspace(
+            0.7, 1.3, 200, endpoint=True
+        )
         self.seeds_vessel = seeds_vessel
         self.arch_types_filter = arch_types_filter
         self.rotate_y_deg_array = rotate_y_deg_array or [0.0]
