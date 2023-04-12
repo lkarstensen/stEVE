@@ -7,5 +7,7 @@ from .reward import RewardInfo
 from .targetreached import TargetReached
 from .pathratio import PathRatio
 from .steps import Steps
+from .avgtranslationspeed import AverageTranslationSpeed
+from .trajectorylength import TrajectoryLength
 
 from . import wrapper
