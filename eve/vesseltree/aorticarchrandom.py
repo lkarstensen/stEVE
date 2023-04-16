@@ -72,11 +72,11 @@ class AorticArchRandom(VesselTree):
         return self._aortic_arch.centerline_coordinates
 
     @property
-    def mesh_path(self) -> str:
+    def mesh_path(self):
         return self._aortic_arch.mesh_path
 
     @property
-    def coordinate_space_episode(self) -> str:
+    def coordinate_space_episode(self):
         return self._aortic_arch.coordinate_space_episode
 
     def reset(self, episode_nr=0, seed: int = None) -> None:
