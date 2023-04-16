@@ -10,7 +10,7 @@ from .totrackingcs import ToTrackingCS
 from .memory import Memory
 from .normalize import Normalize
 from .normalizecustom import NormalizeCustom
-from .normalizeperepisode import NormalizePerEpisode
+from .normalizetrackingperepisode import NormalizeTrackingPerEpisode
 from .relativetofirstrow import RelativeToFirstRow
 from .relativetoinsertionpoint import RelativeToInsertionPoint
 from .relativetolaststate import RelativeToLastState
