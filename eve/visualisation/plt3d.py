@@ -1,9 +1,7 @@
+import numpy as np
+import importlib
 from .visualisation import Visualisation
 from ..vesseltree import VesselTree
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-from mpl_toolkits import mplot3d
 
 
 ##### Not functional yet
@@ -15,6 +13,12 @@ class PLT3D(Visualisation):
         vessel_tree: VesselTree,
     ) -> None:
         self.vessel_tree = vessel_tree
+        self._matplotlib = importlib.import_module("matplotlib")
+        self._matplotlib.use("TkAgg")
+        self._plt = importlib.import_module("matplotlib.pyplot")
+        mpl_toolkits = importlib.import_module("mpl_toolkits")
+        self._mplot3d = getattr(mpl_toolkits, "mplot3d")
+        self.fig = None
         self._init_vessel_tree()
 
         self._click_coordinates = None
@@ -26,7 +30,7 @@ class PLT3D(Visualisation):
         self.fig.canvas.start_event_loop(0.000001)
 
     def close(self):
-        plt.close("all")
+        self._plt.close("all")
 
     def _init_vessel_tree(self):
         self._initialize_pyplot()
@@ -34,9 +38,9 @@ class PLT3D(Visualisation):
     def _initialize_pyplot(
         self,
     ) -> None:
-        if hasattr(self, "fig"):
+        if self.fig is not None:
             self.fig.clear()
-        self.fig = plt.figure()
+        self.fig = self._plt.figure()
         self.ax = self.fig.gca(projection="3d")
         margins = [
             (
@@ -78,7 +82,7 @@ class PLT3D(Visualisation):
             z = np.delete(centerline, [0, 1], axis=1).reshape(
                 -1,
             )
-            line = mplot3d.art3d.Line3D(
+            line = self._mplot3d.art3d.Line3D(
                 x,
                 y,
                 z,
@@ -91,7 +95,7 @@ class PLT3D(Visualisation):
         x = origin[0]
         y = origin[1]
         z = origin[2]
-        self._target_plot = mplot3d.art3d.Line3D(
+        self._target_plot = self._mplot3d.art3d.Line3D(
             x,
             y,
             z,
@@ -102,7 +106,7 @@ class PLT3D(Visualisation):
         )
         self.ax.add_artist(self._target_plot)
 
-        self._tracking_plot = mplot3d.art3d.Line3D(
+        self._tracking_plot = self._mplot3d.art3d.Line3D(
             x,
             y,
             z,
@@ -113,7 +117,7 @@ class PLT3D(Visualisation):
         )
         self.ax.add_artist(self._tracking_plot)
         self.fig.canvas.draw()
-        plt.pause(0.001)
+        self._plt.pause(0.001)
         self.fig.canvas.start_event_loop(0.00001)
 
     def _plot_tracking(self, tracking):

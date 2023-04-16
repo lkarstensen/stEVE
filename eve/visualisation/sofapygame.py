@@ -2,7 +2,6 @@ from math import cos, sin
 from typing import Tuple
 import importlib
 import numpy as np
-import pygame
 
 from .visualisation import Visualisation
 from ..intervention import Intervention
@@ -34,10 +33,11 @@ class SofaPygame(Visualisation):
         self._theta_z = intervention.lao_rao_deg * np.pi / 180
         self._initial_direction = None
         self._distance = None
-        self._sofa = importlib.import_module("Sofa")
-        self._sofa_gl = importlib.import_module("Sofa.SofaGL")
-        self._opengl_gl = importlib.import_module("OpenGL.GL")
-        self._opengl_glu = importlib.import_module("OpenGL.GLU")
+        self._sofa = None
+        self._sofa_gl = None
+        self._opengl_gl = None
+        self._opengl_glu = None
+        self._pygame = None
 
     def render(self) -> None:
         self._sofa.Simulation.updateVisual(self.intervention.sofa_root)
@@ -74,15 +74,22 @@ class SofaPygame(Visualisation):
             image = np.flipud(image)[:, :, :3]
         else:
             image = np.zeros((height, width, 3))
-        pygame.display.flip()
+        self._pygame.display.flip()
         return np.copy(image)
 
     def reset(self, episode_nr: int = 0) -> None:
         # pylint: disable=no-member
+        self._sofa = self._sofa or importlib.import_module("Sofa")
+        self._sofa_gl = self._sofa_gl or importlib.import_module("Sofa.SofaGL")
+        self._opengl_gl = self._opengl_gl or importlib.import_module("OpenGL.GL")
+        self._opengl_glu = self._opengl_glu or importlib.import_module("OpenGL.GLU")
+        self._pygame = self._pygame or importlib.import_module("pygame")
         if not self._initialized:
-            pygame.display.init()
-            flags = pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE
-            pygame.display.set_mode(self.display_size, flags)
+            self._pygame.display.init()
+            flags = (
+                self._pygame.DOUBLEBUF | self._pygame.OPENGL | self._pygame.RESIZABLE
+            )
+            self._pygame.display.set_mode(self.display_size, flags)
             self._initialized = True
 
         gl = self._opengl_gl
@@ -132,7 +139,7 @@ class SofaPygame(Visualisation):
             self._sofa.Simulation.init(self.intervention.sofa_target_node)
 
     def close(self):
-        pygame.quit()  # pylint: disable=no-member
+        self._pygame.quit()  # pylint: disable=no-member
 
     def translate(self, velocity: np.array):
         dt = self.intervention.sofa_root.dt.value
