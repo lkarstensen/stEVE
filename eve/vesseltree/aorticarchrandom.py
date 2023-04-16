@@ -23,7 +23,6 @@ class AorticArchRandom(VesselTree):
         n_coordinate_space_iters: int = 5,
         episodes_between_change: int = 1,
     ) -> None:
-
         self.seed_random = seed_random
         self.scale_width_array = scale_width_array or np.linspace(
             0.7, 1.3, 200, endpoint=True
@@ -51,28 +50,34 @@ class AorticArchRandom(VesselTree):
             self._arch_types = all_archtypes
 
         self._rng = random.Random(seed_random)
-        self._calc_coordinate_space(self.n_coordinate_space_iters)
-        self.aortic_arch: AorticArch = self._randomize_vessel()
+        self._aortic_arch: AorticArch = self._randomize_vessel()
+        self.coordinate_space = self._calc_coordinate_space(
+            self.n_coordinate_space_iters
+        )
 
     @property
     def branches(self):
-        return self.aortic_arch.branches
+        return self._aortic_arch.branches
 
     @property
     def insertion(self):
-        return self.aortic_arch.insertion
+        return self._aortic_arch.insertion
 
     @property
     def branching_points(self):
-        return self.aortic_arch.branching_points
+        return self._aortic_arch.branching_points
 
     @property
     def centerline_coordinates(self):
-        return self.aortic_arch.centerline_coordinates
+        return self._aortic_arch.centerline_coordinates
 
     @property
     def mesh_path(self) -> str:
-        return self.aortic_arch.mesh_path
+        return self._aortic_arch.mesh_path
+
+    @property
+    def coordinate_space_episode(self) -> str:
+        return self._aortic_arch.coordinate_space_episode
 
     def reset(self, episode_nr=0, seed: int = None) -> None:
         if seed is not None:
@@ -80,8 +85,8 @@ class AorticArchRandom(VesselTree):
         elif self.seed_random is None:
             self._rng = random.Random(self.seed_random)
         if episode_nr % self.episodes_between_change == 0:
-            self.aortic_arch = self._randomize_vessel()
-        self.aortic_arch.reset(episode_nr, seed)
+            self._aortic_arch = self._randomize_vessel()
+        self._aortic_arch.reset(episode_nr, seed)
 
     def _calc_coordinate_space(self, iterations) -> None:
         width_high = np.max(self.scale_width_array)
@@ -123,7 +128,7 @@ class AorticArchRandom(VesselTree):
                 vessel.reset()
                 low_global = np.minimum(low_global, vessel.coordinate_space.low)
                 high_global = np.maximum(high_global, vessel.coordinate_space.high)
-        self.coordinate_space = gym.spaces.Box(low=low_global, high=high_global)
+        return gym.spaces.Box(low=low_global, high=high_global)
 
     def _randomize_vessel(self):
         arch_type = self._rng.choice(self._arch_types)

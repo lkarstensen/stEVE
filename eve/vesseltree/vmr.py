@@ -95,20 +95,19 @@ class VMR(VesselTree):
         self.insertion_vessel_name = insertion_vessel_name.lower()
         self.rotate_yzx_deg = rotate_yzx_deg
 
+        self._model_folder = download_vmr_files(model)
+        self._mesh_folder = os.path.join(self._model_folder, "Meshes")
+
+        branches = self._read_branches()
+        self.coordinate_space = self._calc_coord_space(branches)
+        self.coordinate_space_episode = self.coordinate_space
+
         self.branches = None
         self.insertion = None
         self.branching_points = None
-        self._mesh_path = None
-        self.centerline_coordinates = np.array([[0, 0, 0], [1, 1, 1]], dtype=np.float32)
-        self.coordinate_space = gym.spaces.Box(
-            low=self.centerline_coordinates[0], high=self.centerline_coordinates[1]
-        )
-        self.insertion = Insertion(
-            self.centerline_coordinates[0], self.centerline_coordinates[1]
-        )
+        self.centerline_coordinates = None
 
-        self._model_folder = download_vmr_files(model)
-        self._mesh_folder = os.path.join(self._model_folder, "Meshes")
+        self._mesh_path = None
 
     @property
     def mesh_path(self) -> str:
@@ -121,14 +120,13 @@ class VMR(VesselTree):
             self._make_branches()
 
     def _make_branches(self):
-        mesh_path = _get_vtk_file(self._mesh_folder, ".vtu")
-        mesh = pv.read(mesh_path)
-        mesh.scale([SCALING_FACTOR, SCALING_FACTOR, SCALING_FACTOR], inplace=True)
-        branches = _get_branches(self._model_folder, mesh)
-
-        if self.rotate_yzx_deg is not None:
-            branches = rotate(branches, self.rotate_yzx_deg)
+        branches = self._read_branches()
         self.branches = branches
+
+        self.coordinate_space = self._calc_coord_space(branches)
+        centerline_coordinates = [branch.coordinates for branch in branches]
+        self.centerline_coordinates = np.concatenate(centerline_coordinates)
+
         insert_vessel = self[self.insertion_vessel_name]
         ip, ip_dir = calc_insertion(
             insert_vessel,
@@ -139,13 +137,22 @@ class VMR(VesselTree):
         self.branching_points = calc_branching(self.branches)
         self._mesh_path = None
 
+    def _read_branches(self):
+        mesh_path = _get_vtk_file(self._mesh_folder, ".vtu")
+        mesh = pv.read(mesh_path)
+        mesh.scale([SCALING_FACTOR, SCALING_FACTOR, SCALING_FACTOR], inplace=True)
+        branches = _get_branches(self._model_folder, mesh)
+
+        if self.rotate_yzx_deg is not None:
+            branches = rotate(branches, self.rotate_yzx_deg)
+        return branches
+
+    def _calc_coord_space(self, branches):
         branch_highs = [branch.high for branch in branches]
         high = np.max(branch_highs, axis=0)
         branch_lows = [branch.low for branch in branches]
         low = np.min(branch_lows, axis=0)
-        self.coordinate_space = gym.spaces.Box(low=low, high=high)
-        centerline_coordinates = [branch.coordinates for branch in branches]
-        self.centerline_coordinates = np.concatenate(centerline_coordinates)
+        return gym.spaces.Box(low=low, high=high)
 
     def _make_mesh_obj(self):
         mesh_path = _get_vtk_file(self._mesh_folder, ".vtp")

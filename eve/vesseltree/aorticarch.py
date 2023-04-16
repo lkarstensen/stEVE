@@ -53,15 +53,14 @@ class AorticArch(VesselTree):
         self.omit_axis = omit_axis
 
         self._mesh_path = None
-        self.centerline_coordinates = np.array([[0, 0, 0], [1, 1, 1]], dtype=np.float32)
-        self.coordinate_space = gym.spaces.Box(
-            low=self.centerline_coordinates[0], high=self.centerline_coordinates[1]
-        )
+        self.centerline_coordinates = None
         self.branches = None
-        self.insertion = Insertion(
-            self.centerline_coordinates[0], self.centerline_coordinates[1]
-        )
         self.branching_points = None
+        self.insertion = None
+
+        branches = self._generate_branches()
+        self.coordinate_space = self._calc_coord_space(branches)
+        self.coordinate_space_episode = self.coordinate_space
 
     @property
     def mesh_path(self) -> str:
@@ -71,37 +70,36 @@ class AorticArch(VesselTree):
 
     def reset(self, episode_nr=0, seed: int = None) -> None:
         if self.branches is None:
-            self._generate_vesseltree()
+            branches = self._generate_branches()
+            insertion_point, ip_dir = calc_insertion_from_branch_start(branches[0])
 
-    def _generate_vesseltree(self):
-        branches = self._generate_branches()
+            self.coordinate_space = self._calc_coord_space(branches)
+            centerline_coordinates = [branch.coordinates for branch in branches]
+            self.centerline_coordinates = np.concatenate(centerline_coordinates)
+            self.branches = branches
+            self.insertion = Insertion(insertion_point, ip_dir)
+            self.branching_points = calc_branching(branches)
+            self._mesh_path = None
+
+    def _calc_coord_space(self, branches):
+        branch_highs = [branch.high for branch in branches]
+        high = np.max(branch_highs, axis=0)
+        branch_lows = [branch.low for branch in branches]
+        low = np.min(branch_lows, axis=0)
+        coord_space = gym.spaces.Box(low=low, high=high)
+        return coord_space
+
+    def _generate_branches(self):
+        branches = self._generate_unmodified_branches()
         if self.rotate_yzx_deg is not None:
             branches = rotate(branches, self.rotate_yzx_deg)
         if self.scale_xyzd is not None:
             branches = scale(branches, self.scale_xyzd)
         if self.omit_axis is not None:
             branches = fill_axis_with_dummy_value(branches, self.omit_axis)
+        return branches
 
-        insertion_point, ip_dir = calc_insertion_from_branch_start(branches[0])
-
-        centerline_coordinates = [branch.coordinates for branch in branches]
-        self.centerline_coordinates = np.concatenate(centerline_coordinates)
-
-        branch_highs = np.array([branch.high for branch in branches], dtype=np.float32)
-        high = np.max(branch_highs, axis=0)
-        branch_lows = [branch.low for branch in branches]
-        low = np.min(branch_lows, axis=0)
-
-        low -= (high - low) * COORD_SPACE_BUFFER
-        high += (high - low) * COORD_SPACE_BUFFER
-        self.coordinate_space = gym.spaces.Box(low=low, high=high)
-
-        self.branches = branches
-        self.insertion = Insertion(insertion_point, ip_dir)
-        self.branching_points = calc_branching(branches)
-        self._mesh_path = None
-
-    def _generate_branches(self) -> Tuple[Branch]:
+    def _generate_unmodified_branches(self) -> Tuple[Branch]:
         rng = np.random.default_rng(self.seed)
         normal = rng.normal
 
