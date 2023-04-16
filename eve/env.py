@@ -15,7 +15,7 @@ from .terminal import Terminal
 from .truncation import Truncation, TruncationDummy
 from .info import Info, InfoDummy
 from .imaging import Imaging, ImagingDummy
-from .util import ConfigHandler
+from .util import EveObject
 
 ObsType = TypeVar(
     "ObsType",
@@ -26,7 +26,7 @@ ObsType = TypeVar(
 RenderFrame = TypeVar("RenderFrame")
 
 
-class Env(gym.Env):
+class Env(gym.Env, EveObject):
     def __init__(
         self,
         vessel_tree: VesselTree,
@@ -120,10 +120,6 @@ class Env(gym.Env):
     def close(self):
         self.intervention.close()
         self.visualisation.close()
-
-    def save_config(self, file_path: str):
-        confighandler = ConfigHandler()
-        confighandler.save_config(self, file_path)
 
 
 class DummyEnv(Env):

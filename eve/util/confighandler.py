@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any
 from enum import Enum
 from importlib import import_module
 
@@ -23,7 +23,7 @@ class ConfigHandler:
 
     def object_to_config_dict(self, eve_object: Any) -> dict:
         self.object_registry = {}
-        config_dict = self._obj_to_dict(eve_object)
+        config_dict = self._eve_obj_to_dict(eve_object)
         self.object_registry = {}
         return config_dict
 
@@ -31,11 +31,9 @@ class ConfigHandler:
         self,
         config_dict: dict,
         object_registry: dict = None,
-        class_str_replace: List[Tuple[str, str]] = None,
     ) -> Any:
-        class_str_replace = class_str_replace or []
         self.object_registry = object_registry or {}
-        obj = self._dict_to_obj(config_dict, class_str_replace)
+        obj = self._eve_config_dict_to_obj_recursive(config_dict)
         self.object_registry = {}
         return obj
 
@@ -52,15 +50,22 @@ class ConfigHandler:
         if not file.endswith(".yml"):
             file += ".yml"
         with open(file, "w", encoding="utf-8") as dumpfile:
-            yaml.dump(config_dict, dumpfile, default_flow_style=False, sort_keys=False)
+            yaml.dump(
+                config_dict,
+                dumpfile,
+                default_flow_style=False,
+                sort_keys=False,
+                indent=4,
+            )
 
-    def _obj_to_dict(self, eve_object) -> dict:
+    def _eve_obj_to_dict(self, eve_object) -> dict:
         attributes_dict = {}
         attributes_dict[
-            "class"
+            "_class"
         ] = f"{eve_object.__module__}.{eve_object.__class__.__name__}"
-        attributes_dict["_id"] = id(eve_object)
-        if id(eve_object) in self.object_registry:
+        object_id = id(eve_object)
+        attributes_dict["_id"] = object_id
+        if object_id in self.object_registry:
             return attributes_dict
 
         if isinstance(eve_object, self._eve.Env):
@@ -80,66 +85,42 @@ class ConfigHandler:
             init_attributes.remove("kwds")
 
         for attribute in init_attributes:
-            value = getattr(eve_object, attribute)
+            nested_object = getattr(eve_object, attribute)
+            attributes_dict[attribute] = self._obj_to_native_datatypes(nested_object)
 
-            if isinstance(value, np.integer):
-                dict_value = int(value)
-
-            elif isinstance(value, Enum):
-                dict_value = value.value
-
-            elif isinstance(value, np.ndarray):
-                dict_value = value.tolist()
-
-            elif isinstance(value, list):
-                dict_value = []
-                for v in value:
-                    if hasattr(v, "__module__"):
-                        if "eve" in v.__module__ and "Space" in str(type(v)):
-                            dict_value.append(str(type(v)))
-                            continue
-                        search_string = v.__module__ + str(type(v).__bases__)
-                        if "eve." in search_string:
-                            dict_value.append(self._obj_to_dict(v))
-                        continue
-
-                    dict_value.append(v)
-
-            elif isinstance(value, dict):
-                dict_value = {}
-                for k, v in value.items():
-                    if hasattr(v, "__module__"):
-                        if "eve" in v.__module__ and "Space" in str(type(v)):
-                            dict_value[k] = str(type(v))
-                            continue
-                        search_string = v.__module__ + str(type(v).__bases__)
-                        if "eve." in search_string:
-                            dict_value[k] = self._obj_to_dict(v)
-                        continue
-
-                    dict_value[k] = v
-
-            else:
-                if hasattr(value, "__module__"):
-                    search_string = value.__module__ + str(type(value).__bases__)
-
-                    if "eve" in value.__module__ and "Space" in str(type(value)):
-                        dict_value = str(type(value))
-
-                    elif "eve." in search_string:
-                        dict_value = self._obj_to_dict(value)
-
-                    else:
-                        raise NotImplementedError(
-                            f"Handling this class {value.__class__} in not implemented "
-                        )
-
-                else:
-                    dict_value = value
-
-            attributes_dict[attribute] = dict_value
-        self.object_registry[id(eve_object)] = attributes_dict
+        self.object_registry[object_id] = attributes_dict
         return attributes_dict
+
+    def _obj_to_native_datatypes(self, obj) -> Any:
+        if isinstance(obj, np.integer):
+            return int(obj)
+
+        elif isinstance(obj, Enum):
+            return obj.value
+
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+
+        elif isinstance(obj, list):
+            return [self._obj_to_native_datatypes(v) for v in obj]
+
+        elif isinstance(obj, tuple):
+            return tuple(self._obj_to_native_datatypes(v) for v in obj)
+
+        elif isinstance(obj, dict):
+            return {k: self._obj_to_native_datatypes(v) for k, v in obj.items()}
+
+        elif hasattr(obj, "__module__"):
+            search_string = obj.__module__ + str(type(obj).__bases__)
+
+            if "eve." in search_string:
+                return self._eve_obj_to_dict(obj)
+
+            raise NotImplementedError(
+                f"Handling this class {obj.__class__} in not implemented "
+            )
+
+        return obj
 
     @staticmethod
     def _get_init_attributes(init_function):
@@ -150,35 +131,31 @@ class ConfigHandler:
 
         return init_attributes
 
-    def _dict_to_obj(
-        self, obj_config_dict: dict, class_str_replace: List[Tuple[str, str]]
-    ):
-        if not ("class" in obj_config_dict.keys() and "_id" in obj_config_dict.keys()):
-            return obj_config_dict
-
+    def _eve_config_dict_to_obj_recursive(self, obj_config_dict: dict):
         obj_id = obj_config_dict.pop("_id")
         if obj_id in self.object_registry.keys():
             return self.object_registry[obj_id]
 
-        class_str: str = obj_config_dict.pop("class")
-        for str_replace in class_str_replace:
-            class_str.replace(str_replace[0], str_replace[1])
+        class_str: str = obj_config_dict.pop("_class")
+        obj_kwds = {}
         for attribute_name, value in obj_config_dict.items():
-            if isinstance(value, dict):
-                obj_config_dict[attribute_name] = self._dict_to_obj(
-                    value, class_str_replace
-                )
-            if isinstance(value, list) or isinstance(value, tuple):
-                for i, list_entry in enumerate(value):
-                    if isinstance(list_entry, dict):
-                        obj_config_dict[attribute_name][i] = self._dict_to_obj(
-                            list_entry, class_str_replace
-                        )
+            obj_kwds[attribute_name] = self._config_dict_value_converter(value)
 
         constructor = self._get_class_constructor(class_str)
-        obj = constructor(**obj_config_dict)
+        obj = constructor(**obj_kwds)
         self.object_registry[obj_id] = obj
         return obj
+
+    def _config_dict_value_converter(self, value):
+        if isinstance(value, dict):
+            if "_class" in value.keys() and "_id" in value.keys():
+                return self._eve_config_dict_to_obj_recursive(value)
+            return {k: self._config_dict_value_converter(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [self._config_dict_value_converter(v) for v in value]
+        elif isinstance(value, tuple):
+            return tuple(self._config_dict_value_converter(v) for v in value)
+        return value
 
     def _get_class_constructor(self, class_str: str):
         module_path, class_name = class_str.rsplit(".", 1)
