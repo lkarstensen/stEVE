@@ -68,9 +68,25 @@ class Intervention:
         return gym.spaces.Box(low=low, high=high)
 
     @property
+    def tracking_space_episode(self) -> gym.spaces.Box:
+        low = self.vessel_tree.coordinate_space_episode.low
+        high = self.vessel_tree.coordinate_space_episode.high
+        low = self.vessel_cs_to_tracking_cs(low)
+        high = self.vessel_cs_to_tracking_cs(high)
+        return gym.spaces.Box(low=low, high=high)
+
+    @property
     def tracking3d_space(self) -> gym.spaces.Box:
         low = self.vessel_tree.coordinate_space.low
         high = self.vessel_tree.coordinate_space.high
+        low = self.vessel_cs_to_tracking3d_cs(low)
+        high = self.vessel_cs_to_tracking3d_cs(high)
+        return gym.spaces.Box(low=low, high=high)
+
+    @property
+    def tracking3d_space_episode(self) -> gym.spaces.Box:
+        low = self.vessel_tree.coordinate_space_episode.low
+        high = self.vessel_tree.coordinate_space_episode.high
         low = self.vessel_cs_to_tracking3d_cs(low)
         high = self.vessel_cs_to_tracking3d_cs(high)
         return gym.spaces.Box(low=low, high=high)
@@ -169,7 +185,6 @@ class Intervention:
         action[mask, 0] = 0.0
         tip = self.instrument_position_vessel_cs[0]
         if self.stop_device_at_tree_end and self.vessel_tree.at_tree_end(tip):
-
             max_length = max(inserted_lengths)
             if max_length > 10:
                 dist_to_longest = -1 * inserted_lengths + max_length
