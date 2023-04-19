@@ -77,10 +77,8 @@ class ConfigHandler:
 
         if "args" in init_attributes:
             init_attributes.remove("args")
-
         if "kwargs" in init_attributes:
             init_attributes.remove("kwargs")
-
         if "kwds" in init_attributes:
             init_attributes.remove("kwds")
 
