@@ -1,4 +1,6 @@
-from typing import Any
+from copy import deepcopy
+import importlib
+from typing import Any, Optional
 from enum import Enum
 from importlib import import_module
 
@@ -16,34 +18,10 @@ class ConfigHandler:
         obj_dict = self.object_to_config_dict(eve_object)
         self.save_config_dict(obj_dict, file)
 
-    def load_config(self, file: str) -> Any:
-        obj_dict = self.load_config_dict(file)
-        obj = self.config_dict_to_object(obj_dict)
-        return obj
-
     def object_to_config_dict(self, eve_object: Any) -> dict:
         self.object_registry = {}
         config_dict = self._eve_obj_to_dict(eve_object)
         self.object_registry = {}
-        return config_dict
-
-    def config_dict_to_object(
-        self,
-        config_dict: dict,
-        object_registry: dict = None,
-    ) -> Any:
-        self.object_registry = object_registry or {}
-        obj = self._eve_config_dict_to_obj_recursive(config_dict)
-        self.object_registry = {}
-        return obj
-
-    def load_config_dict(self, file: str) -> dict:
-        try:
-            from yaml import CLoader as Loader
-        except ImportError:
-            from yaml import Loader
-        with open(file, "r", encoding="utf-8") as config:
-            config_dict = yaml.load(config, Loader=Loader)
         return config_dict
 
     def save_config_dict(self, config_dict: dict, file: str) -> None:
@@ -57,6 +35,99 @@ class ConfigHandler:
                 sort_keys=False,
                 indent=4,
             )
+
+    def load_config(self, file: str) -> Any:
+        obj_dict = self.load_config_dict(file)
+        obj = self.config_dict_to_object(obj_dict)
+        return obj
+
+    def load_config_dict(self, file: str) -> dict:
+        try:
+            from yaml import CLoader as Loader
+        except ImportError:
+            from yaml import Loader
+        with open(file, "r", encoding="utf-8") as config:
+            config_dict = yaml.load(config, Loader=Loader)
+        return config_dict
+
+    def config_dict_to_object(
+        self,
+        config_dict: dict,
+        object_registry: dict[int, object] = None,
+    ) -> Any:
+        self.object_registry = object_registry or {}
+        obj = self._eve_config_dict_to_obj_recursive(config_dict)
+        self.object_registry = {}
+        return obj
+
+    def config_dict_to_list_of_objects(
+        self, config_dict: dict, full_config_dict: Optional[dict] = None
+    ) -> dict[int, str]:
+        if full_config_dict is not None:
+            full_config_registry, _ = self._config_dict_to_object_registry_recursive(
+                full_config_dict
+            )
+        else:
+            full_config_registry = None
+        config_registry, _ = self._config_dict_to_object_registry_recursive(
+            config_dict, object_registry=None, full_config_registry=full_config_registry
+        )
+        return config_registry
+
+    def _config_dict_to_object_registry_recursive(
+        self, config_dict: dict, object_registry=None, full_config_registry: dict = None
+    ) -> dict[int, str]:
+        object_registry = object_registry or {}
+        full_config_registry = full_config_registry or {}
+        obj_id = config_dict["_id"]
+        if obj_id in object_registry.keys():
+            return object_registry, obj_id
+
+        if obj_id in full_config_registry.keys():
+            config_dict = full_config_registry[obj_id]
+
+        object_registry[obj_id] = deepcopy(config_dict)
+        object_registry[obj_id]["requires"] = []
+        for value in config_dict.values():
+            (
+                object_registry,
+                new_obj_id,
+            ) = self._config_value_to_object_registry_recursive(
+                value, object_registry, full_config_registry
+            )
+            if new_obj_id is not None:
+                object_registry[obj_id]["requires"].append(new_obj_id)
+        return object_registry, obj_id
+
+    def _config_value_to_object_registry_recursive(
+        self, config_value, object_registry: dict, full_config_registry
+    ):
+        obj_id = None
+        if isinstance(config_value, (list, tuple)):
+            for value in config_value:
+                (
+                    object_registry,
+                    obj_id,
+                ) = self._config_value_to_object_registry_recursive(
+                    value, object_registry, full_config_registry
+                )
+        elif isinstance(config_value, dict):
+            if "_id" in config_value.keys() and "_class" in config_value.keys():
+                (
+                    object_registry,
+                    obj_id,
+                ) = self._config_dict_to_object_registry_recursive(
+                    config_value, object_registry, full_config_registry
+                )
+            else:
+                for value in config_value.values():
+                    (
+                        object_registry,
+                        obj_id,
+                    ) = self._config_value_to_object_registry_recursive(
+                        value, object_registry, full_config_registry
+                    )
+        return object_registry, obj_id
 
     def _eve_obj_to_dict(self, eve_object) -> dict:
         attributes_dict = {}
@@ -86,34 +157,33 @@ class ConfigHandler:
             nested_object = getattr(eve_object, attribute)
             attributes_dict[attribute] = self._obj_to_native_datatypes(nested_object)
 
-        self.object_registry[object_id] = attributes_dict
+        self.object_registry[object_id] = eve_object
         return attributes_dict
 
     def _obj_to_native_datatypes(self, obj) -> Any:
         if isinstance(obj, np.integer):
             return int(obj)
 
-        elif isinstance(obj, Enum):
+        if isinstance(obj, Enum):
             return obj.value
 
-        elif isinstance(obj, np.ndarray):
+        if isinstance(obj, np.ndarray):
             return obj.tolist()
 
         elif isinstance(obj, list):
             return [self._obj_to_native_datatypes(v) for v in obj]
 
-        elif isinstance(obj, tuple):
+        if isinstance(obj, tuple):
             return tuple(self._obj_to_native_datatypes(v) for v in obj)
 
-        elif isinstance(obj, dict):
+        if isinstance(obj, dict):
             return {k: self._obj_to_native_datatypes(v) for k, v in obj.items()}
 
-        elif hasattr(obj, "__module__"):
-            search_string = obj.__module__ + str(type(obj).__bases__)
+        eve = importlib.import_module("eve")
+        if isinstance(obj, eve.util.EveObject):
+            return self._eve_obj_to_dict(obj)
 
-            if "eve." in search_string:
-                return self._eve_obj_to_dict(obj)
-
+        if hasattr(obj, "__module__"):
             raise NotImplementedError(
                 f"Handling this class {obj.__class__} in not implemented "
             )
@@ -149,9 +219,9 @@ class ConfigHandler:
             if "_class" in value.keys() and "_id" in value.keys():
                 return self._eve_config_dict_to_obj_recursive(value)
             return {k: self._config_dict_value_converter(v) for k, v in value.items()}
-        elif isinstance(value, list):
+        if isinstance(value, list):
             return [self._config_dict_value_converter(v) for v in value]
-        elif isinstance(value, tuple):
+        if isinstance(value, tuple):
             return tuple(self._config_dict_value_converter(v) for v in value)
         return value
 
