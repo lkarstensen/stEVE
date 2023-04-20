@@ -16,6 +16,8 @@ class InterventionDummy(Intervention):
         self.devices = devices
         self.tracking_low = np.array(tracking_low)
         self.tracking_high = np.array(tracking_high)
+        self._tracking_low_initial = np.array(tracking_low)
+        self._tracking_high_initial = np.array(tracking_high)
         self.instrument_position_vessel_cs = np.zeros((2, 3))
         self.device_lengths_inserted = {device: 0.0 for device in devices}
         self.device_rotations = {device: 0.0 for device in devices}
@@ -47,6 +49,15 @@ class InterventionDummy(Intervention):
 
     def step(self, action: np.ndarray) -> None:
         self.last_action = action
+        max_device_length = max(list(self.device_lengths_inserted.values()))
+        tracking = self.instrument_position_vessel_cs
+        tracking_diff = tracking[:-1] - tracking[1:]
+        tracking_length = np.linalg.norm(tracking_diff, axis=-1)
+        tracking_length = np.sum(tracking_length)
+        scale_factor = max_device_length / tracking_length
+        self.instrument_position_vessel_cs *= scale_factor
+        self.tracking_low = self._tracking_low_initial * scale_factor
+        self.tracking_high = self._tracking_high_initial * scale_factor
 
     def reset(self, episode_nr: int = 0, seed: int = None) -> None:
         self.last_action *= 0.0
