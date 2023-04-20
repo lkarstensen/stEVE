@@ -1,9 +1,11 @@
 from dataclasses import dataclass, field
 from typing import Tuple, Union
 
+from ...util import EveObject
+
 
 @dataclass(frozen=True, init=False)
-class Device:
+class Device(EveObject):
     """A container for alle the data necessary to create a WireRestShape in SOFA BeamAdapter
 
     Args:

@@ -41,10 +41,10 @@ class VertebralStaticEnv(eve.Env):
         success = eve.success.TargetReached(target)
         pathfinder = eve.pathfinder.BruteForceBFS(vessel_tree, simulation, target)
 
-        tracking = eve.observation.Tracking(simulation, n_points=5)
+        tracking = eve.observation.Tracking2D(simulation, n_points=5)
         tracking = eve.observation.wrapper.RelativeToFirstRow(tracking)
 
-        target_state = eve.observation.Target(target)
+        target_state = eve.observation.Target2D(target)
         target_state = eve.observation.wrapper.ToTrackingCS(
             target_state, intervention=simulation
         )

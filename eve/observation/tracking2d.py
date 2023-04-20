@@ -4,7 +4,7 @@ from ..intervention.intervention import Intervention
 from .observation import Observation, gym
 
 
-class Tracking(Observation):
+class Tracking2D(Observation):
     def __init__(
         self,
         intervention: Intervention,
@@ -19,8 +19,8 @@ class Tracking(Observation):
 
     @property
     def space(self) -> gym.spaces.Box:
-        low = self.intervention.tracking_space.low
-        high = self.intervention.tracking_space.high
+        low = self.intervention.tracking2d_space.low
+        high = self.intervention.tracking2d_space.high
         low = np.tile(low, [self.n_points, 1])
         high = np.tile(high, [self.n_points, 1])
         return gym.spaces.Box(low=low, high=high, dtype=np.float32)
@@ -32,14 +32,13 @@ class Tracking(Observation):
         self.step()
 
     def _calculate_tracking_state(self) -> np.ndarray:
-        tracking = self.intervention.tracking
+        tracking = self.intervention.tracking2d
         inserted_length = max(self.intervention.device_lengths_inserted.values())
         return self._evenly_distributed_tracking(tracking, inserted_length)
 
     def _evenly_distributed_tracking(
         self, tracking: np.ndarray, inserted_length: float
     ) -> np.ndarray:
-
         tracking_diff = tracking[:-1] - tracking[1:]
         tracking_length = np.linalg.norm(tracking_diff, axis=-1)
         tracking_length = np.sum(tracking_length)

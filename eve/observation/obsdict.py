@@ -2,9 +2,10 @@ from abc import ABC
 from typing import Dict
 
 from .observation import Observation, gym, np
+from ..util import EveObject
 
 
-class ObsDict(ABC):
+class ObsDict(EveObject, ABC):
     def __init__(
         self, observations: Dict[str, Observation], name: str = "observation_dict"
     ) -> None:

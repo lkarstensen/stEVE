@@ -1,19 +1,24 @@
+from typing import Union
 import numpy as np
-from ..tracking import Tracking
+from ..tracking2d import Tracking2D
+from ..target2d import Target2D
+from ...intervention import Intervention
 from .normalize import Normalize, Optional
 
 
-class NormalizeTrackingPerEpisode(Normalize):
+class NormalizeTracking2DEpisode(Normalize):
     def __init__(
         self,
-        wrapped_obs: Tracking,
+        wrapped_obs: Union[Tracking2D, Target2D],
+        intervention: Intervention,
         name: Optional[str] = None,
     ) -> None:
         super().__init__(wrapped_obs, name)
-        self._normalization_space = wrapped_obs.intervention.tracking_space_episode
+        self.intervention = intervention
+        self._normalization_space = intervention.tracking2d_space_episode
 
     def reset(self, episode_nr: int = 0) -> None:
-        self._normalization_space = self.wrapped_obs.intervention.tracking_space_episode
+        self._normalization_space = self.intervention.tracking2d_space_episode
         return super().reset(episode_nr)
 
     def _normalize(self, obs: np.ndarray) -> np.ndarray:

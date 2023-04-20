@@ -28,51 +28,47 @@ class BruteForceBFS(Pathfinder):
         self.vessel_tree = vessel_tree
         self.intervention = intervention
         self.target = target
-        self._path_length: float = 0.0
-        self._path_points: np.ndarray = np.empty((0, 3))
-        self._path_branching_points: np.ndarray = np.empty((0, 3))
+        self.path_length: float = 0.0
+        self.path_points3d: np.ndarray = np.empty((0, 3))
+        self.path_branching_points3d: np.ndarray = np.empty((0, 3))
         self._branches = None
         self._node_connections = None
         self._search_graph_base = None
 
     @property
-    def path_length(self) -> float:
-        return self._path_length
-
-    @property
-    def path_points(self) -> np.ndarray:
-        return self._path_points
-
-    @property
-    def path_branching_points(self):  # -> List[BranchingPoint]:
-        return self._path_branching_points
-
-    @property
     def coordinate_space(self) -> gym.spaces.Box:
-        low = self.vessel_tree.coordinate_space.low
-        high = self.vessel_tree.coordinate_space.high
-        return gym.spaces.Box(low=low, high=high, dtype=np.float32)
+        return self.intervention.tracking3d
 
     def reset(self, episode_nr=0) -> None:
         if self._branches != self.vessel_tree.branches:
             self._init_vessel_tree()
-            self._path_length = 0.0
-            self._path_points = np.empty((0, 3))
-            self._path_branching_points = np.empty((0, 3))
+            self.path_length = 0.0
+            self.path_points3d = np.empty((0, 3))
+            self.path_branching_points3d = np.empty((0, 3))
             self._branches = self.vessel_tree.branches
         self.step()
 
     def step(self) -> None:
         position = self.intervention.instrument_position_vessel_cs[0]
-        target = self.target.coordinates
+        target = self.target.coordinates_vessel_cs
         position_branch = self.vessel_tree.find_nearest_branch_to_point(position)
         target_branch = self.vessel_tree.find_nearest_branch_to_point(target)
 
         (
-            self._path_branching_points,
-            self._path_length,
-            self._path_points,
+            path_branching_points,
+            self.path_length,
+            path_points,
         ) = self._get_shortest_path(position_branch, target_branch, position, target)
+        if path_branching_points is not None:
+            path_branching_points = [
+                branching_point.coordinates for branching_point in path_branching_points
+            ]
+            self.path_branching_points3d = self.intervention.vessel_cs_to_tracking3d(
+                path_branching_points
+            )
+        else:
+            self.path_branching_points3d = None
+        self.path_points3d = self.intervention.vessel_cs_to_tracking3d(path_points)
 
     def _init_vessel_tree(self) -> None:
         self._node_connections = self._initialize_node_connections(
@@ -117,7 +113,6 @@ class BruteForceBFS(Pathfinder):
         start: np.ndarray,
         target: np.ndarray,
     ):  # -> Tuple[List[BranchingPoint], float, List[CenterlinePoint]]:
-
         search_graph = self._create_search_graph(start_branch, target_branch)
         bfs_paths = self._get_bfs_paths_generator(search_graph)
 
@@ -156,7 +151,6 @@ class BruteForceBFS(Pathfinder):
         return shortest_path, shortest_path_length, shortest_path_points
 
     def _create_search_graph(self, start_branch, target_branch):
-
         search_graph = deepcopy(self._search_graph_base)
         if start_branch == target_branch:
             search_graph["start"] = ["target"]

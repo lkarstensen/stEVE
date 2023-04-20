@@ -130,7 +130,7 @@ class SofaPygame(Visualisation):
         self._theta_z = self.intervention.lao_rao_deg * np.pi / 180
         self.rotate(0, 0)
         if self.target is not None:
-            target = self.target.coordinates
+            target = self.target.coordinates_vessel_cs
             self.intervention.sofa_target_node.MechanicalObject.translation = [
                 target[0],
                 target[1],

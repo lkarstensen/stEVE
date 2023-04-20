@@ -1,32 +1,35 @@
 from abc import ABC, abstractmethod
-from typing import List
 import numpy as np
 import gymnasium as gym
-
-from ..vesseltree import BranchingPoint
 from ..util import EveObject
+from ..vesseltree import VesselTree
+from ..intervention import Intervention
+from ..target import Target
 
 
 class Pathfinder(EveObject, ABC):
-    @property
-    @abstractmethod
-    def path_length(self) -> float:
-        ...
+    path_length: float
+    path_points3d: np.ndarray
+    path_branching_points3d: np.ndarray
+    vesseltree: VesselTree
+    intervention: Intervention
+    target: Target
 
     @property
-    @abstractmethod
-    def path_points(self) -> np.ndarray:
-        ...
+    def path_points2d(self) -> np.ndarray:
+        return self.intervention.tracking3d_to_2d(self.path_points3d)
 
     @property
-    @abstractmethod
-    def path_branching_points(self) -> List[BranchingPoint]:
-        ...
+    def path_branching_points2d(self) -> np.ndarray:
+        return self.intervention.tracking3d_to_2d(self.path_branching_points3d)
 
     @property
-    @abstractmethod
-    def coordinate_space(self) -> gym.spaces.Box:
-        ...
+    def coordinate_space2d(self) -> gym.spaces.Box:
+        return self.intervention.tracking2d_space
+
+    @property
+    def coordinate_space3d(self) -> gym.spaces.Box:
+        return self.intervention.tracking3d_space
 
     @abstractmethod
     def step(self) -> None:

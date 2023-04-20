@@ -17,7 +17,7 @@ class TipToTargetDistDelta(Reward):
 
     def step(self) -> None:
         tip = self.intervention.instrument_position_vessel_cs[0]
-        target = self.target.coordinates
+        target = self.target.coordinates2d
         dist = np.linalg.norm(tip - target)
 
         dist_delta = dist - self._last_dist
@@ -31,7 +31,7 @@ class TipToTargetDistDelta(Reward):
     def reset(self, episode_nr: int = 0) -> None:
         self.reward = 0.0
         tip = self.intervention.instrument_position_vessel_cs[0]
-        target = self.target.coordinates
+        target = self.target.coordinates2d
         dist = np.linalg.norm(tip - target)
         self._last_dist = dist
         self._last_target = target

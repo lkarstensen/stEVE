@@ -21,7 +21,7 @@ class Even(InterimTarget):
         self.resolution = resolution
 
     @property
-    def coordinate_space(self) -> gym.spaces.Box:
+    def coordinate_space2d(self) -> gym.spaces.Box:
         return self.pathfinder.coordinate_space
 
     def step(self) -> None:
@@ -34,7 +34,7 @@ class Even(InterimTarget):
                 self.all_coordinates = self.all_coordinates[1:]
         else:
             self.reached = False
-        self.coordinates = self.all_coordinates[0]
+        self.coordinates2d = self.all_coordinates[0]
 
     def reset(self, episode_nr: int = 0) -> None:
         self.all_coordinates = self._calc_interim_targets()
@@ -42,7 +42,7 @@ class Even(InterimTarget):
     def _calc_interim_targets(self) -> np.ndarray:
         path_points = self.pathfinder.path_points
         path_points = path_points[::-1]
-        interim_targets = [self.target.coordinates]
+        interim_targets = [self.target.coordinates2d]
         acc_dist = 0.0
         for point, next_point in zip(path_points[:-1], path_points[1:]):
             length = np.linalg.norm(next_point - point)

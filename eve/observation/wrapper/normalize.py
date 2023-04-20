@@ -15,10 +15,8 @@ class Normalize(Observation):
 
     @property
     def space(self) -> gym.spaces.Box:
-        wrapped_high = self.wrapped_obs.space.high
-        high = self._normalize(wrapped_high)
-        wrapped_low = self.wrapped_obs.space.low
-        low = self._normalize(wrapped_low)
+        high = np.ones_like(self.wrapped_obs.space.high)
+        low = -high
         return gym.spaces.Box(low=low, high=high, dtype=np.float32)
 
     def step(self) -> None:

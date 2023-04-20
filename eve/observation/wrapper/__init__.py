@@ -6,13 +6,10 @@ class MemoryResetMode(int, Enum):
     ZERO = 1
 
 
-from .totrackingcs import ToTrackingCS
 from .memory import Memory
 from .normalize import Normalize
 from .normalizecustom import NormalizeCustom
-from .normalizetrackingperepisode import NormalizeTrackingPerEpisode
+from .normalizetracking2depisode import NormalizeTracking2DEpisode
 from .relativetofirstrow import RelativeToFirstRow
-from .relativetoinsertionpoint import RelativeToInsertionPoint
 from .relativetolaststate import RelativeToLastState
-from .relativetotip import RelativeToTip
 from .selectivememory import SelectiveMemory

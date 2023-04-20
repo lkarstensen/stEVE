@@ -34,7 +34,7 @@ class Pillow(Imaging):
         return self._image
 
     def step(self) -> np.ndarray:
-        trackings = self.intervention.device_trackings
+        trackings = self.intervention.device_trackings2d
         diameters = self.intervention.device_diameters
         # Noise is around colour 128.
         noise_image = Image.effect_noise(size=self.image_size, sigma=5)
@@ -43,8 +43,8 @@ class Pillow(Imaging):
         self._image = np.asarray(image, dtype=np.uint8)
 
     def reset(self, episode_nr: int = 0) -> None:
-        coords_high = self.intervention.tracking_space.high
-        coords_low = self.intervention.tracking_space.low
+        coords_high = self.intervention.tracking2d_space.high
+        coords_low = self.intervention.tracking2d_space.low
         intervention_size_x = coords_high[0] - coords_low[0]
         intervention_size_y = coords_high[1] - coords_low[1]
         x_factor = self.image_size[0] / intervention_size_x
@@ -110,7 +110,6 @@ class Pillow(Imaging):
         width=1,
         grey_value=0,
     ) -> np.ndarray:
-
         draw = ImageDraw.Draw(image)
         point_cloud_image = self._coord_transform_tracking_to_image(point_cloud)
         draw.line(point_cloud_image, fill=grey_value, width=width, joint="curve")
@@ -119,7 +118,6 @@ class Pillow(Imaging):
     def _coord_transform_tracking_to_image(
         self, coords: np.ndarray
     ) -> List[Tuple[float, float]]:
-
         coords_image = (coords + self._tracking_offset) * self._tracking_to_image_factor
         coords_image += self._image_offset
         coords_image = np.round(coords_image, decimals=0).astype(np.int64)

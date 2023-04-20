@@ -20,13 +20,9 @@ class VesselTree(EveObject, ABC):
     insertion: Insertion
     branching_points: List[BranchingPoint]
     centerline_coordinates: np.ndarray
-    coordinate_space: gym.spaces.Box = gym.spaces.Box(0.0, 0.0, (3,))
-    coordinate_space_episode: gym.spaces.Box = gym.spaces.Box(0.0, 0.0, (3,))
-
-    @property
-    @abstractmethod
-    def mesh_path(self) -> str:
-        ...
+    mesh_path: str
+    coordinate_space: gym.spaces.Box
+    coordinate_space_episode: gym.spaces.Box
 
     def step(self) -> None:
         ...

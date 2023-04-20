@@ -63,12 +63,12 @@ class AorticArch3D(eve.Env):
         pathfinder = eve.pathfinder.BruteForceBFS(vessel_tree, simulation, target)
 
         # Observation
-        tracking = eve.observation.Tracking(simulation, n_points=2)
+        tracking = eve.observation.Tracking2D(simulation, n_points=2)
         tracking = eve.observation.wrapper.Normalize(tracking)
         tracking = eve.observation.wrapper.Memory(
             tracking, 2, eve.observation.wrapper.MemoryResetMode.FILL
         )
-        target_state = eve.observation.Target(target)
+        target_state = eve.observation.Target2D(target)
         target_state = eve.observation.wrapper.ToTrackingCS(
             target_state, intervention=simulation
         )

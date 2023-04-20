@@ -2,9 +2,10 @@ from abc import ABC
 from typing import List, Tuple
 
 from .observation import Observation, gym, np
+from ..util import EveObject
 
 
-class ObsTuple(ABC):
+class ObsTuple(EveObject, ABC):
     def __init__(
         self, observations: List[Observation], name: str = "observation_tuple"
     ) -> None:

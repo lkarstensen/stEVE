@@ -4,7 +4,7 @@ from .observation import Observation, gym
 from ..target import Target as TargetClass
 
 
-class Target(Observation):
+class Target2D(Observation):
     def __init__(
         self,
         target: TargetClass,
@@ -15,10 +15,10 @@ class Target(Observation):
 
     @property
     def space(self) -> gym.spaces.Box:
-        return self.target.coordinate_space
+        return self.target.coordinate_space2d
 
     def step(self) -> None:
-        self.obs = np.array(self.target.coordinates, dtype=np.float32)
+        self.obs = np.array(self.target.coordinates2d, dtype=np.float32)
 
     def reset(self, episode_nr: int = 0) -> None:
         self.step()
