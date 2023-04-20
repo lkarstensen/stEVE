@@ -13,6 +13,6 @@ from . import (
     truncation,
     vesseltree,
 )
-from .env import Env
+from .env import Env, EnvObsInfoOnly
 
 from .util import ConfigHandler
