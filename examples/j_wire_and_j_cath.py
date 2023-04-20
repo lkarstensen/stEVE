@@ -19,20 +19,17 @@ device2 = eve.intervention.device.JWire(
 )
 
 
-simulation = eve.intervention.Intervention(
+simulation = eve.intervention.Simulation(
     vessel_tree=vessel_tree, devices=[device, device2], lao_rao_deg=-5, cra_cau_deg=20
 )
 start = eve.start.MaxDeviceLength(simulation, 380)
 target = eve.target.CenterlineRandom(vessel_tree, simulation, threshold=10)
 pathfinder = eve.pathfinder.BruteForceBFS(vessel_tree, simulation, target)
 
-tracking = eve.observation.Tracking(simulation, n_points=5)
+tracking = eve.observation.Tracking2D(simulation, n_points=5)
 tracking = eve.observation.wrapper.RelativeToFirstRow(tracking)
 
-target_state = eve.observation.Target(target)
-target_state = eve.observation.wrapper.ToTrackingCS(
-    target_state, intervention=simulation
-)
+target_state = eve.observation.Target2D(target)
 
 rotation = eve.observation.Rotations(simulation)
 state = eve.observation.ObsDict(

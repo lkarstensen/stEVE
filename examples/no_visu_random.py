@@ -7,20 +7,17 @@ if __name__ == "__main__":
     logging.basicConfig(format=FORMAT, level=logging.DEBUG)
     vessel_tree = eve.vesseltree.AorticArch(eve.vesseltree.ArchType.VII)
     device = eve.intervention.device.JWire()
-    simulation = eve.intervention.Intervention(
-        vessel_tree, [device], sofacore_mp=True, timeout_step_mp=1, image_frequency=7.5
+    simulation = eve.intervention.Simulation(
+        vessel_tree, [device], sofacore_mp=True, mp_timeout_step=1, image_frequency=7.5
     )
 
     start = eve.start.InsertionPoint(simulation)
     target = eve.target.CenterlineRandom(vessel_tree, simulation, threshold=10)
     pathfinder = eve.pathfinder.BruteForceBFS(vessel_tree, simulation, target)
 
-    position = eve.observation.Tracking(simulation, n_points=5)
+    position = eve.observation.Tracking2D(simulation, n_points=5)
     position = eve.observation.wrapper.RelativeToFirstRow(position)
-    target_state = eve.observation.Target(target)
-    target_state = eve.observation.wrapper.ToTrackingCS(
-        target_state, intervention=simulation
-    )
+    target_state = eve.observation.Target2D(target)
     target_state = eve.observation.wrapper.Normalize(target_state)
     rotation = eve.observation.Rotations(simulation)
     state = eve.observation.ObsDict(
@@ -52,6 +49,6 @@ if __name__ == "__main__":
         for _ in range(10):
             action = [[random.uniform(0, 10), random.uniform(-3.28, 3.28)]]
             s, r, term, trunc, i = env.step(action)
-            print("step")
+            print(s)
 
     env.close()

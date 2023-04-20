@@ -1,98 +1,99 @@
 # pylint: disable=no-member
 
+import os
 from time import perf_counter
 import pygame
 import numpy as np
 import eve
-import eve.visualisation
+from eve.visualisation.sofapygame import SofaPygame
 import eve.bench_candidates
 
-import gymnasium as gym
 
-# vessel_tree = eve.vesseltree.AorticArch(
-#     seed=30,
-#     scale_xyzd=[1.0, 1.0, 1.0, 0.6],
-#     rotate_yzx_deg=[0, -20, -5],
-#     omit_axis="y",
-# )
-# vessel_tree = eve.vesseltree.VMR(
-#     "0094_0001",
-#     -10,
-#     -2,
-#     rotate_yzx_deg=[0, 110, 8],
-# )
-
-# device = eve.intervention.device.JWire()
-
-# simulation = eve.intervention.Intervention(
-#     vessel_tree=vessel_tree,
-#     devices=[device],
-#     stop_device_at_tree_end=True,
-# )
-# start = eve.start.MaxDeviceLength(
-#     intervention=simulation,
-#     max_length=500,
-# )
-# target = eve.target.CenterlineRandom(
-#     vessel_tree=vessel_tree,
-#     intervention=simulation,
-#     threshold=10,
-# )
-# pathfinder = eve.pathfinder.BruteForceBFS(
-#     vessel_tree=vessel_tree,
-#     intervention=simulation,
-#     target=target,
-# )
-
-# position = eve.observation.Tracking(
-#     intervention=simulation,
-#     n_points=5,
-# )
-# position = eve.observation.wrapper.RelativeToFirstRow(position)
-# target_state = eve.observation.Target(target=target)
-# target_state = eve.observation.wrapper.ToTrackingCS(target_state, simulation)
-# rotation = eve.observation.Rotations(intervention=simulation)
-
-# state = eve.observation.ObsDict(
-#     {"position": position, "target": target_state, "rotation": rotation}
-# )
-
-# target_reward = eve.reward.TargetReached(
-#     target=target,
-#     factor=1.0,
-# )
-# path_delta = eve.reward.PathLengthDelta(
-#     pathfinder=pathfinder,
-#     factor=0.01,
-# )
-# reward = eve.reward.Combination([target_reward, path_delta])
+vessel_tree = eve.vesseltree.AorticArch(
+    seed=30,
+    scale_xyzd=[1.0, 1.0, 1.0, 0.75],
+    rotate_yzx_deg=[0, -20, -5],
+)
 
 
-# target_reached = eve.terminal.TargetReached(target=target)
-# max_steps = eve.truncation.MaxSteps(200)
+device = eve.intervention.device.JWire()
 
-# imaging = eve.imaging.Pillow(simulation, (1000, 2000))
+simulation = eve.intervention.Simulation(
+    vessel_tree=vessel_tree,
+    devices=[device],
+    stop_device_at_tree_end=True,
+)
+start = eve.start.MaxDeviceLength(
+    intervention=simulation,
+    max_length=500,
+)
+target = eve.target.CenterlineRandom(
+    vessel_tree=vessel_tree,
+    intervention=simulation,
+    threshold=5,
+    branches=["lcca", "rcca", "lsa", "rsa", "bct", "co"],
+)
+pathfinder = eve.pathfinder.BruteForceBFS(
+    vessel_tree=vessel_tree,
+    intervention=simulation,
+    target=target,
+)
 
-# visualisation = eve.visualisation.SofaPygame(intervention=simulation)
+position = eve.observation.Tracking2D(
+    intervention=simulation,
+    n_points=5,
+)
+position = eve.observation.wrapper.NormalizeTracking2DEpisode(position, simulation)
+target_state = eve.observation.Target2D(target=target)
+target_state = eve.observation.wrapper.NormalizeTracking2DEpisode(
+    target_state, simulation
+)
+rotation = eve.observation.Rotations(intervention=simulation)
+
+state = eve.observation.ObsDict(
+    {"position": position, "target": target_state, "rotation": rotation}
+)
+
+target_reward = eve.reward.TargetReached(
+    target=target,
+    factor=1.0,
+)
+path_delta = eve.reward.PathLengthDelta(
+    pathfinder=pathfinder,
+    factor=0.01,
+)
+reward = eve.reward.Combination([target_reward, path_delta])
 
 
-# env = eve.Env(
-#     vessel_tree=vessel_tree,
-#     intervention=simulation,
-#     start=start,
-#     target=target,
-#     observation=state,
-#     reward=reward,
-#     terminal=target_reached,
-#     truncation=max_steps,
-#     visualisation=visualisation,
-#     pathfinder=pathfinder,
-#     imaging=imaging,
-# )
+target_reached = eve.terminal.TargetReached(target=target)
+max_steps = eve.truncation.MaxSteps(200)
 
-env = gym.make(
-    "eve_bench/aorticarch3d", visualisation=True, mode="train"
-)  # eve.bench_candidates.AorticArch3D(visualisation=True)
+imaging = eve.imaging.Pillow(simulation, (1000, 2000))
+
+visualisation = SofaPygame(intervention=simulation, target=target)
+
+
+env = eve.Env(
+    vessel_tree=vessel_tree,
+    intervention=simulation,
+    start=start,
+    target=target,
+    observation=state,
+    reward=reward,
+    terminal=target_reached,
+    truncation=max_steps,
+    visualisation=visualisation,
+    pathfinder=pathfinder,
+    imaging=imaging,
+)
+
+# folder = os.path.dirname(os.path.abspath(__file__))
+# config_path = os.path.join(folder, "env_config.yml")
+# env.save_config(config_path)
+
+
+# env = eve.Env.from_config_file(config_path)
+
 
 n_steps = 0
 r_cum = 0.0
