@@ -64,18 +64,18 @@ class EveObject(ABC):
         # find objects which dependencies were removed due to the exchange
         maybe_no_longer_required = list(set(maybe_no_longer_required))
         still_required = []
-        for id in maybe_no_longer_required:
-            if id in still_required:
+        for obj_id in maybe_no_longer_required:
+            if obj_id in still_required:
                 continue
             for obj_dict in object_list.values():
-                if isinstance(obj_dict, dict) and id in obj_dict["requires"]:
-                    still_required.append(id)
+                if isinstance(obj_dict, dict) and obj_id in obj_dict["requires"]:
+                    still_required.append(obj_id)
                     continue
 
         # remove objects without depenencies from registry
-        for id in maybe_no_longer_required:
-            if not id in still_required:
-                object_list.pop(id)
+        for obj_id in maybe_no_longer_required:
+            if not obj_id in still_required:
+                object_list.pop(obj_id)
 
         # reduce config dict with only the ids left in reduced_object_registry
         to_remove = []

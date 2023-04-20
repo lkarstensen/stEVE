@@ -64,70 +64,70 @@ class ConfigHandler:
         self, config_dict: dict, full_config_dict: Optional[dict] = None
     ) -> dict[int, str]:
         if full_config_dict is not None:
-            full_config_registry, _ = self._config_dict_to_object_registry_recursive(
+            full_config_registry, _ = self._config_dict_to_object_list_recursive(
                 full_config_dict
             )
         else:
             full_config_registry = None
-        config_registry, _ = self._config_dict_to_object_registry_recursive(
-            config_dict, object_registry=None, full_config_registry=full_config_registry
+        config_list, _ = self._config_dict_to_object_list_recursive(
+            config_dict, object_list=None, full_config_registry=full_config_registry
         )
-        return config_registry
+        return config_list
 
-    def _config_dict_to_object_registry_recursive(
-        self, config_dict: dict, object_registry=None, full_config_registry: dict = None
+    def _config_dict_to_object_list_recursive(
+        self, config_dict: dict, object_list=None, full_config_registry: dict = None
     ) -> dict[int, str]:
-        object_registry = object_registry or {}
+        object_list = object_list or {}
         full_config_registry = full_config_registry or {}
         obj_id = config_dict["_id"]
-        if obj_id in object_registry.keys():
-            return object_registry, obj_id
+        if obj_id in object_list.keys():
+            return object_list, obj_id
 
         if obj_id in full_config_registry.keys():
             config_dict = full_config_registry[obj_id]
 
-        object_registry[obj_id] = deepcopy(config_dict)
-        object_registry[obj_id]["requires"] = []
+        object_list[obj_id] = deepcopy(config_dict)
+        object_list[obj_id]["requires"] = []
         for value in config_dict.values():
             (
-                object_registry,
+                object_list,
                 new_obj_id,
-            ) = self._config_value_to_object_registry_recursive(
-                value, object_registry, full_config_registry
+            ) = self._config_value_to_object_list_recursive(
+                value, object_list, full_config_registry
             )
             if new_obj_id is not None:
-                object_registry[obj_id]["requires"].append(new_obj_id)
-        return object_registry, obj_id
+                object_list[obj_id]["requires"].append(new_obj_id)
+        return object_list, obj_id
 
-    def _config_value_to_object_registry_recursive(
-        self, config_value, object_registry: dict, full_config_registry
+    def _config_value_to_object_list_recursive(
+        self, config_value, object_list: dict, full_config_registry
     ):
         obj_id = None
         if isinstance(config_value, (list, tuple)):
             for value in config_value:
                 (
-                    object_registry,
+                    object_list,
                     obj_id,
-                ) = self._config_value_to_object_registry_recursive(
-                    value, object_registry, full_config_registry
+                ) = self._config_value_to_object_list_recursive(
+                    value, object_list, full_config_registry
                 )
         elif isinstance(config_value, dict):
             if "_id" in config_value.keys() and "_class" in config_value.keys():
                 (
-                    object_registry,
+                    object_list,
                     obj_id,
-                ) = self._config_dict_to_object_registry_recursive(
-                    config_value, object_registry, full_config_registry
+                ) = self._config_dict_to_object_list_recursive(
+                    config_value, object_list, full_config_registry
                 )
             else:
                 for value in config_value.values():
                     (
-                        object_registry,
+                        object_list,
                         obj_id,
-                    ) = self._config_value_to_object_registry_recursive(
-                        value, object_registry, full_config_registry
+                    ) = self._config_value_to_object_list_recursive(
+                        value, object_list, full_config_registry
                     )
-        return object_registry, obj_id
+        return object_list, obj_id
 
     def _eve_obj_to_dict(self, eve_object) -> dict:
         attributes_dict = {}
