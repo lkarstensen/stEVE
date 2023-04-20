@@ -151,9 +151,7 @@ class EnvObsInfoOnly(Env):
 
         self.episode_number = 0
 
-    def step(
-        self, action: np.ndarray
-    ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: np.ndarray) -> Tuple[ObsType, Dict[str, Any]]:
         self.vessel_tree.step()
         self.intervention.step(action)
         self.imaging.step()
