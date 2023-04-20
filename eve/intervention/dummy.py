@@ -16,7 +16,7 @@ class InterventionDummy(Intervention):
         self.devices = devices
         self.tracking_low = np.array(tracking_low)
         self.tracking_high = np.array(tracking_high)
-        self.tracking3d = np.zeros((2, 3))
+        self.instrument_position_vessel_cs = np.zeros((2, 3))
         self.device_lengths_inserted = {device: 0.0 for device in devices}
         self.device_rotations = {device: 0.0 for device in devices}
         self.last_action = np.zeros((len(self.devices), 2), dtype=np.float32)

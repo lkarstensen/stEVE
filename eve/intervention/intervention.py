@@ -10,7 +10,6 @@ from ..util import EveObject
 class Intervention(EveObject, ABC):
     devices: List[Device]
     instrument_position_vessel_cs: np.ndarray
-    tracking3d: np.ndarray
     device_lengths_inserted: Dict[Device, float]
     device_rotations: Dict[Device, float]
     last_action: np.ndarray
@@ -18,6 +17,10 @@ class Intervention(EveObject, ABC):
     tracking2d_space_episode: gym.spaces.Box
     tracking3d_space: gym.spaces.Box
     tracking3d_space_episode: gym.spaces.Box
+
+    @property
+    def tracking3d(self) -> np.ndarray:
+        return self.vessel_cs_to_tracking3d(self.instrument_position_vessel_cs)
 
     @property
     def tracking2d(self) -> np.ndarray:
