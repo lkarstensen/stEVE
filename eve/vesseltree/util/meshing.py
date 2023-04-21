@@ -1,6 +1,6 @@
 from tempfile import gettempdir
 import os
-from typing import Iterable
+from typing import Iterable, Tuple
 import numpy as np
 import pyvista as pv
 
@@ -24,6 +24,10 @@ def get_surface_mesh(
     mesh = pv.PolyData(vertices, faces)
     mesh.translate(voxel_cube.world_offset, inplace=True)
     return mesh
+
+
+def load_mesh(path: str) -> pv.PolyData:
+    return pv.read(path)
 
 
 def save_mesh(mesh: pv.PolyData, path: str):
@@ -72,3 +76,29 @@ def get_temp_mesh_path(name_base):
             except IOError:
                 continue
     return mesh_path
+
+
+def get_high_low_from_mesh(mesh_path: str) -> Tuple[np.ndarray, np.ndarray]:
+    mesh = pv.read(mesh_path)
+    bounds = mesh.bounds
+    low = np.array([bounds[0], bounds[2], bounds[4]])
+    high = np.array([bounds[1], bounds[3], bounds[5]])
+    return high, low
+
+
+def scale_mesh(
+    mesh: pv.PolyData, scale_xyz: Tuple[float, float, float], inplace=True
+) -> pv.PolyData:
+    mesh = mesh.scale(scale_xyz, inplace=inplace)
+    return mesh
+
+
+def rotate_mesh(
+    mesh: pv.PolyData,
+    rotate_yzx_deg: Tuple[float, float, float],
+    inplace=True,
+) -> pv.PolyData:
+    mesh = mesh.rotate_y(rotate_yzx_deg[0], inplace=inplace)
+    mesh = mesh.rotate_z(rotate_yzx_deg[1], inplace=inplace)
+    mesh = mesh.rotate_x(rotate_yzx_deg[2], inplace=inplace)
+    return mesh
