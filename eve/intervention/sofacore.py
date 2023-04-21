@@ -94,7 +94,6 @@ class SOFACore:
             self._sofa.Simulation.animate(self.root, self.root.dt.value)
 
     def reset_sofa_devices(self):
-
         x = self._instruments_combined.m_ircontroller.xtip.value
         self._instruments_combined.m_ircontroller.xtip.value = x * 0.0
         ri = self._instruments_combined.m_ircontroller.rotationInstrument.value
@@ -129,7 +128,6 @@ class SOFACore:
             or np.any(coords_low != self._coords_low)
             or target_size != self._target_size
         ):
-
             if self.root is None:
                 self.root = self._sofa.Core.Node()
             else:
@@ -198,7 +196,6 @@ class SOFACore:
         )
 
     def _add_vessel_tree(self, mesh_path):
-
         vessel_object = self.root.addChild("vesselTree")
         vessel_object.addObject(
             "MeshObjLoader",
@@ -217,7 +214,6 @@ class SOFACore:
         self._vessel_object = vessel_object
 
     def _add_device(self, insertion_point, insertion_direction):
-
         for device in self.devices:
             topo_lines = self.root.addChild("topolines_" + device.name)
             if not device.is_a_procedural_shape:
@@ -385,7 +381,7 @@ class SOFACore:
         self._vessel_object.addObject(
             "OglModel",
             src="@meshLoader",
-            color=[0.5, 1.0, 1.0, 0.3],
+            color=[1.0, 0.0, 0.0, 0.3],
         )
 
         # Devices
@@ -520,7 +516,6 @@ class SOFACore:
     def _calculate_insertion_pose(
         insertion_point: np.ndarray, insertion_direction: np.ndarray
     ):
-
         insertion_direction = insertion_direction / np.linalg.norm(insertion_direction)
         original_direction = np.array([1.0, 0.0, 0.0])
         if np.all(insertion_direction == original_direction):
