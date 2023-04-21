@@ -11,20 +11,17 @@ from .device import Device
 class SOFACore:
     def __init__(
         self,
-        devices: List[Device],
-        image_frequency: float = 7.5,
         dt_simulation: float = 0.006,
     ) -> None:
         self.logger = logging.getLogger(self.__module__)
 
-        self.devices = tuple(devices)
-        self.image_frequency = image_frequency
         self.dt_simulation = dt_simulation
 
         self.root = None
         self.camera = None
         self.target_node = None
         self.simulation_error = False
+        self._devices = None
 
         self._vessel_object = None
         self._instruments_combined = None
@@ -60,8 +57,11 @@ class SOFACore:
         try:
             rots = self._instruments_combined.m_ircontroller.rotationInstrument.value
         except AttributeError:
-            rots = [0.0] * len(self.devices)
+            rots = [0.0] * len(self._devices)
         return rots
+
+    def add_devices(self, devices: List[Device]):
+        self._devices = tuple(devices)
 
     def close(self):
         self._unload_simulation()
@@ -74,9 +74,9 @@ class SOFACore:
         for _ in range(n_steps):
             inserted_lengths = self.inserted_lengths
 
-            if len(self.devices) > 1:
+            if len(self._devices) > 1:
                 max_id = np.argmax(inserted_lengths)
-                new_length = inserted_lengths + action[:, 0] / self.image_frequency
+                new_length = inserted_lengths + action[:, 0] * self.dt_simulation
                 new_max_id = np.argmax(new_length)
                 if max_id != new_max_id:
                     if abs(action[max_id, 0]) > abs(action[new_max_id, 0]):
@@ -214,7 +214,7 @@ class SOFACore:
         self._vessel_object = vessel_object
 
     def _add_device(self, insertion_point, insertion_direction):
-        for device in self.devices:
+        for device in self._devices:
             topo_lines = self.root.addChild("topolines_" + device.name)
             if not device.is_a_procedural_shape:
                 topo_lines.addObject(
@@ -263,7 +263,7 @@ class SOFACore:
             "BTDLinearSolver", verification=False, subpartSolve=False, verbose=False
         )
         nx = 0
-        for device in self.devices:
+        for device in self._devices:
             nx = sum([nx, sum(device.density_of_beams)])
 
         instrument_combined.addObject(
@@ -290,7 +290,7 @@ class SOFACore:
         rotations = []
         interpolations = ""
 
-        for device in self.devices:
+        for device in self._devices:
             wire_rest_shape = (
                 "@../topolines_" + device.name + "/rest_shape_" + device.name
             )
@@ -385,7 +385,7 @@ class SOFACore:
         )
 
         # Devices
-        for device in self.devices:
+        for device in self._devices:
             visu_node = self._instruments_combined.addChild("Visu_" + device.name)
             visu_node.activated = True
             visu_node.addObject("MechanicalObject", name="Quads")

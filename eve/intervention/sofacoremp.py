@@ -48,19 +48,17 @@ class SOFACoreMP(SOFACore):
     # pylint: disable=super-init-not-called
     def __init__(
         self,
-        devices: List[Device],
-        image_frequency: float = 7.5,
         dt_simulation: float = 0.006,
         step_timeout: float = 2,
         restart_n_resets: int = 200,
     ) -> None:
         self.logger = logging.getLogger(self.__module__)
 
-        self.devices = tuple(devices)
-        self.image_frequency = image_frequency
         self.dt_simulation = dt_simulation
         self.step_timeout = step_timeout
         self.restart_n_resets = restart_n_resets
+
+        self._devices = None
 
         self._reset_count = 0
 
@@ -74,16 +72,20 @@ class SOFACoreMP(SOFACore):
         self._result_queue: mp.Queue = None
         self._shutdown_event: mp.Event = None
         self._last_dof_positions = np.array([[0.0, 0.0, 0.0]])
-        self._last_inserted_lengths = [0.0] * len(self.devices)
-        self._last_rotations = [0.0] * len(self.devices)
+        self._last_inserted_lengths = None
+        self._last_rotations = None
 
         self._insertion_point = np.empty(())
         self._insertion_direction = np.empty(())
         self._mesh_path: str = None
 
+    def add_devices(self, devices: List[Device]):
+        super().add_devices(devices)
+        self._last_inserted_lengths = [0.0] * len(self._devices)
+        self._last_rotations = [0.0] * len(self._devices)
+
     @property
     def dof_positions(self) -> np.ndarray:
-
         if self._task_queue is None:
             return self._last_dof_positions
 
@@ -142,7 +144,6 @@ class SOFACoreMP(SOFACore):
         coords_low: Optional[Tuple[float, float, float]] = None,
         target_size: Optional[float] = None,
     ):
-
         if self._sofa_process is None:
             self._new_sofa_process()
         elif self._reset_count > 0 and self._reset_count % self.restart_n_resets == 0:
@@ -174,14 +175,12 @@ class SOFACoreMP(SOFACore):
         self._shutdown_event = mp.Event()
         self._task_queue = mp.Queue()
         self._result_queue = mp.Queue()
+        process_sofa_core = SOFACore(self.dt_simulation)
+        process_sofa_core.add_devices(self._devices)
         self._sofa_process = mp.Process(
             target=run,
             args=[
-                SOFACore(
-                    self.devices,
-                    self.image_frequency,
-                    self.dt_simulation,
-                ),
+                process_sofa_core,
                 self._task_queue,
                 self._result_queue,
                 self._shutdown_event,

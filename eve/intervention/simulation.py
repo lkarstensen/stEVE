@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 import logging
 import numpy as np
 import gymnasium as gym
@@ -24,6 +24,7 @@ class Simulation(Intervention):
         sofacore_mp: bool = False,
         mp_timeout_step: float = 2,
         mp_restart_n_resets: int = 200,
+        sofa_core: Optional[SOFACore] = None,
     ) -> None:
         self.logger = logging.getLogger(self.__module__)
 
@@ -37,6 +38,7 @@ class Simulation(Intervention):
         self.sofacore_mp = sofacore_mp
         self.mp_timeout_step = mp_timeout_step
         self.mp_restart_n_resets = mp_restart_n_resets
+        self.sofa_core = sofa_core
 
         velocity_limits = tuple(device.velocity_limit for device in devices)
         self.velocity_limits = np.array(velocity_limits, dtype=np.float32)
@@ -45,17 +47,18 @@ class Simulation(Intervention):
         self.init_visual_nodes = False
         self.display_size = (1, 1)
         self.target_size = 1
-
-        if sofacore_mp:
+        if sofa_core is not None:
+            self._sofa_core = sofa_core
+        elif sofacore_mp:
             self._sofa_core = SOFACoreMP(
-                devices,
-                image_frequency,
                 dt_simulation,
                 mp_timeout_step,
                 mp_restart_n_resets,
             )
         else:
-            self._sofa_core = SOFACore(devices, image_frequency, dt_simulation)
+            self._sofa_core = SOFACore(dt_simulation)
+
+        self._sofa_core.add_devices(self.devices)
 
     @property
     def simulation_error(self) -> bool:
