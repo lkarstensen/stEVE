@@ -60,7 +60,9 @@ class VesselTree(EveObject, ABC):
                 nearest_branch = branch
         return nearest_branch
 
-    def at_tree_end(self, point: np.ndarray):
+    def at_tree_end(self, point: np.ndarray) -> bool:
+        if self.branches is None:
+            return False
         branch = self.find_nearest_branch_to_point(point)
         branch_np = branch.coordinates
         distances = np.linalg.norm(branch_np - point, axis=1)
