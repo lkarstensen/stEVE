@@ -19,9 +19,33 @@ class InterventionDummy(Intervention):
         self._tracking_low_initial = np.array(tracking_low)
         self._tracking_high_initial = np.array(tracking_high)
         self.instrument_position_vessel_cs = np.zeros((2, 3))
+        self._tracking3d = None
+        self._tracking2d = None
         self.device_lengths_inserted = {device: 0.0 for device in devices}
         self.device_rotations = {device: 0.0 for device in devices}
         self.last_action = np.zeros((len(self.devices), 2), dtype=np.float32)
+
+    @property
+    def tracking2d(self) -> np.ndarray:
+        if self._tracking2d is None:
+            return super().tracking2d
+        return self._tracking2d
+
+    @tracking2d.setter
+    def tracking2d(self, tracking2d: np.ndarray) -> np.ndarray:
+        self._tracking2d = tracking2d
+        self.tracking3d = np.insert(tracking2d, 1, 0.0, -1)
+
+    @property
+    def tracking3d(self) -> np.ndarray:
+        if self._tracking3d is None:
+            return super().tracking3d
+        return self._tracking3d
+
+    @tracking3d.setter
+    def tracking3d(self, tracking3d: np.ndarray) -> np.ndarray:
+        self._tracking3d = tracking3d
+        self.instrument_position_vessel_cs = tracking3d
 
     @property
     def tracking2d_space(self) -> gym.spaces.Box:
