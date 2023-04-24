@@ -23,7 +23,7 @@ class CenterlineRandom(Target):
         self.min_distance_between_possible_targets = (
             min_distance_between_possible_targets
         )
-
+        self.reached = False
         self._potential_targets = None
         self._branches_initialized = None
         self._rng = random.Random()
