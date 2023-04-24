@@ -1,9 +1,9 @@
-from typing import List, Optional, Tuple
+from typing import Tuple
 import numpy as np
 import gymnasium as gym
 
 from .vesseltree import VesselTree, Insertion
-from .util.branch import Branch, calc_branching
+from .util.branch import calc_branching
 from .util.meshing import (
     rotate_mesh,
     scale_mesh,
@@ -33,8 +33,8 @@ class FromMesh(VesselTree):
 
         temp_mesh_path = get_temp_mesh_path("mesh_from_file")
         mesh = load_mesh(mesh)
-        mesh = scale_mesh(mesh, scale_xyz)
         mesh = rotate_mesh(mesh, rotate_yzx_deg)
+        mesh = scale_mesh(mesh, scale_xyz)
         save_mesh(mesh, temp_mesh_path)
         self.mesh_path = temp_mesh_path
         self.insertion = Insertion(insertion_position, insertion_direction)
