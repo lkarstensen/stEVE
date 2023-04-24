@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from abc import ABC, abstractmethod
 import numpy as np
 import gymnasium as gym
@@ -23,6 +23,7 @@ class VesselTree(EveObject, ABC):
     mesh_path: str
     coordinate_space: gym.spaces.Box
     coordinate_space_episode: gym.spaces.Box
+    visu_mesh_path: Optional[str] = None
 
     def step(self) -> None:
         ...

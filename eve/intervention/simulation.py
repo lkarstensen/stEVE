@@ -181,6 +181,7 @@ class Simulation(Intervention):
             coords_low=self.vessel_tree.coordinate_space.low,
             coords_high=self.vessel_tree.coordinate_space.high,
             target_size=self.target_size,
+            vessel_visual_path=self.vessel_tree.visu_mesh_path,
         )
 
     def reset_devices(self) -> None:
@@ -188,17 +189,7 @@ class Simulation(Intervention):
 
     def reload_sofa(self):
         # self._sofa_core.reload_sofa()
-        ip_pos = self.vessel_tree.insertion.position
-        ip_dir = self.vessel_tree.insertion.direction
-        self._sofa_core.reset(
-            insertion_point=ip_pos,
-            insertion_direction=ip_dir,
-            mesh_path=self.vessel_tree.mesh_path,
-            add_visual=self.init_visual_nodes,
-            display_size=self.display_size,
-            coords_low=self.vessel_tree.coordinate_space.low,
-            coords_high=self.vessel_tree.coordinate_space.high,
-        )
+        self.reset()
 
     def close(self):
         self._sofa_core.close()

@@ -36,6 +36,7 @@ class SOFACore:
         self._coords_high = np.empty(())
         self._coords_low = np.empty(())
         self._target_size = None
+        self._vessel_visual_path: str = None
         self._rng = np.random.default_rng()
 
     @property
@@ -112,6 +113,7 @@ class SOFACore:
         coords_high: Optional[Tuple[float, float, float]] = None,
         coords_low: Optional[Tuple[float, float, float]] = None,
         target_size: Optional[float] = None,
+        vessel_visual_path: Optional[str] = None,
         seed: int = None,
     ):
         if seed is not None:
@@ -126,6 +128,7 @@ class SOFACore:
             or np.any(insertion_point != self._insertion_point)
             or np.any(insertion_direction != self._insertion_direction)
             or mesh_path != self._mesh_path
+            or vessel_visual_path != self._vessel_visual_path
             or add_visual != self._reset_add_visual
             or display_size != self._display_size
             or np.any(coords_high != self._coords_high)
@@ -146,7 +149,13 @@ class SOFACore:
                 insertion_point=insertion_point, insertion_direction=insertion_direction
             )
             if add_visual:
-                self._add_visual(display_size, coords_low, coords_high, target_size)
+                self._add_visual(
+                    display_size,
+                    coords_low,
+                    coords_high,
+                    target_size,
+                    vessel_visual_path=vessel_visual_path,
+                )
 
             self._sofa.Simulation.init(self.root)
             self._insertion_point = insertion_point
@@ -157,6 +166,7 @@ class SOFACore:
             self._coords_high = coords_high
             self._coords_low = coords_low
             self._target_size = target_size
+            self._vessel_visual_path = vessel_visual_path
             self.simulation_error = False
             self.logger.debug("Sofa Initialized")
 
@@ -211,7 +221,7 @@ class SOFACore:
             position="@meshLoader.position",
             triangles="@meshLoader.triangles",
         )
-        vessel_object.addObject("MechanicalObject", src="@meshLoader")
+        vessel_object.addObject("MechanicalObject", name="dofs", src="@meshLoader")
         vessel_object.addObject("TriangleCollisionModel", moving=False, simulated=False)
         vessel_object.addObject("LineCollisionModel", moving=False, simulated=False)
         self._vessel_object = vessel_object
@@ -371,6 +381,7 @@ class SOFACore:
         coords_low: Tuple[float, float, float],
         coords_high: Tuple[float, float, float],
         target_size: float,
+        vessel_visual_path: Optional[str] = None,
     ):
         coords_low = np.array(coords_low)
         coords_high = np.array(coords_high)
@@ -382,11 +393,24 @@ class SOFACore:
         )
 
         # Vessel Tree
-        self._vessel_object.addObject(
-            "OglModel",
-            src="@meshLoader",
-            color=[1.0, 0.0, 0.0, 0.3],
-        )
+        if vessel_visual_path is None:
+            self._vessel_object.addObject(
+                "OglModel",
+                src="@meshLoader",
+                color=[1.0, 0.0, 0.0, 0.3],
+            )
+        else:
+            visu_vessel = self._vessel_object.addChild("Visual Vessel")
+            visu_vessel.addObject(
+                "MeshObjLoader", name="loader", filename=vessel_visual_path
+            )
+            visu_vessel.addObject("MechanicalObject", name="visu")
+            visu_vessel.addObject(
+                "OglModel", name="Visu", src="@loader", color=[1.0, 0.0, 0.0, 0.3]
+            )
+            visu_vessel.addObject(
+                "BarycentricMapping", input="@../dofs", output="@Visu"
+            )
 
         # Devices
         for device in self._devices:

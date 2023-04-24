@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 import numpy as np
 import gymnasium as gym
 
@@ -20,11 +20,13 @@ class FromMesh(VesselTree):
         mesh: str,
         insertion_position: Tuple[float, float, float],
         insertion_direction: Tuple[float, float, float],
-        scale_xyz: Tuple[float, float, float] = None,
-        rotate_yzx_deg: Tuple[float, float, float] = None,
+        visu_mesh: Optional[str] = None,
+        scale_xyz: Optional[Tuple[float, float, float]] = None,
+        rotate_yzx_deg: Optional[Tuple[float, float, float]] = None,
         # branches: Optional[List[Branch]] = None,
     ) -> None:
         self.mesh = mesh
+        self.visu_mesh = visu_mesh
         self.insertion_position = insertion_position
         self.insertion_direction = insertion_direction
 
@@ -37,6 +39,14 @@ class FromMesh(VesselTree):
         mesh = scale_mesh(mesh, scale_xyz)
         save_mesh(mesh, temp_mesh_path)
         self.mesh_path = temp_mesh_path
+
+        temp_mesh_path = get_temp_mesh_path("mesh_from_file")
+        mesh = load_mesh(visu_mesh)
+        mesh = rotate_mesh(mesh, rotate_yzx_deg)
+        mesh = scale_mesh(mesh, scale_xyz)
+        save_mesh(mesh, temp_mesh_path)
+        self.visu_mesh_path = temp_mesh_path
+
         self.insertion = Insertion(insertion_position, insertion_direction)
 
         branches = None
