@@ -140,9 +140,21 @@ class ConfigHandler:
             return attributes_dict
 
         if isinstance(eve_object, self._eve.Env):
-            init_attributes = self._get_init_attributes(self._eve.Env.__init__)
-            if "self" in init_attributes:
-                init_attributes.remove("self")
+            init_attributes = [
+                "vessel_tree",
+                "intervention",
+                "imaging",
+                "target",
+                "interim_target",
+                "start",
+                "pathfinder",
+                "observation",
+                "reward",
+                "terminal",
+                "truncation",
+                "info",
+                "visualisation",
+            ]
         else:
             init_attributes = self._get_init_attributes(eve_object.__init__)
 
