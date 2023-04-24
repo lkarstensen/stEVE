@@ -37,6 +37,7 @@ class SOFACore:
         self._coords_high = np.empty(())
         self._coords_low = np.empty(())
         self._target_size = None
+        self._rng = np.random.default_rng()
 
     @property
     def dof_positions(self) -> np.ndarray:
@@ -97,7 +98,8 @@ class SOFACore:
         x = self._instruments_combined.m_ircontroller.xtip.value
         self._instruments_combined.m_ircontroller.xtip.value = x * 0.0
         ri = self._instruments_combined.m_ircontroller.rotationInstrument.value
-        self._instruments_combined.m_ircontroller.rotationInstrument.value = ri * 0.0
+        ri = self._rng.random(ri.shape) * 2 * np.pi
+        self._instruments_combined.m_ircontroller.rotationInstrument.value = ri
         self._instruments_combined.m_ircontroller.indexFirstNode.value = 0
         self._sofa.Simulation.reset(self.root)
 
@@ -111,7 +113,10 @@ class SOFACore:
         coords_high: Optional[Tuple[float, float, float]] = None,
         coords_low: Optional[Tuple[float, float, float]] = None,
         target_size: Optional[float] = None,
+        seed: int = None,
     ):
+        if seed is not None:
+            self._rng = np.random.default_rng(seed)
         if self._sofa is None:
             self._sofa = importlib.import_module("Sofa")
         if self._sofa_runtime is None:
@@ -145,7 +150,6 @@ class SOFACore:
                 self._add_visual(display_size, coords_low, coords_high, target_size)
 
             self._sofa.Simulation.init(self.root)
-
             self._insertion_point = insertion_point
             self._insertion_direction = insertion_direction
             self._mesh_path = mesh_path
@@ -255,18 +259,18 @@ class SOFACore:
                 "MechanicalObject", name="dofTopo_" + device.name, template="Rigid3d"
             )
 
-        instrument_combined = self.root.addChild("InstrumentCombined")
-        instrument_combined.addObject(
+        instruments_combined = self.root.addChild("InstrumentCombined")
+        instruments_combined.addObject(
             "EulerImplicitSolver", rayleighStiffness=0.2, rayleighMass=0.1
         )
-        instrument_combined.addObject(
+        instruments_combined.addObject(
             "BTDLinearSolver", verification=False, subpartSolve=False, verbose=False
         )
         nx = 0
         for device in self._devices:
             nx = sum([nx, sum(device.density_of_beams)])
 
-        instrument_combined.addObject(
+        instruments_combined.addObject(
             "RegularGridTopology",
             name="MeshLines",
             nx=nx,
@@ -280,7 +284,7 @@ class SOFACore:
             zmin=1,
             p0=[0, 0, 0],
         )
-        instrument_combined.addObject(
+        instruments_combined.addObject(
             "MechanicalObject",
             showIndices=False,
             name="DOFs",
@@ -294,21 +298,21 @@ class SOFACore:
             wire_rest_shape = (
                 "@../topolines_" + device.name + "/rest_shape_" + device.name
             )
-            instrument_combined.addObject(
+            instruments_combined.addObject(
                 "WireBeamInterpolation",
                 name="Interpol_" + device.name,
                 WireRestShape=wire_rest_shape,
                 radius=device.radius,
                 printLog=False,
             )
-            instrument_combined.addObject(
+            instruments_combined.addObject(
                 "AdaptiveBeamForceFieldAndMass",
                 name="ForceField_" + device.name,
                 massDensity=device.mass_density,
                 interpolation="@Interpol_" + device.name,
             )
             x_tip.append(0.0)
-            rotations.append(random.random() * math.pi * 2)
+            rotations.append(self._rng.random() * math.pi * 2)
             interpolations += "Interpol_" + device.name + " "
         x_tip[0] += 0.1
         interpolations = interpolations[:-1]
@@ -317,7 +321,7 @@ class SOFACore:
             insertion_point, insertion_direction
         )
 
-        instrument_combined.addObject(
+        instruments_combined.addObject(
             "InterventionalRadiologyController",
             name="m_ircontroller",
             template="Rigid3d",
@@ -330,13 +334,14 @@ class SOFACore:
             listening=True,
             controlledInstrument=0,
         )
-        instrument_combined.addObject(
+
+        instruments_combined.addObject(
             "LinearSolverConstraintCorrection", wire_optimization="true", printLog=False
         )
-        instrument_combined.addObject(
+        instruments_combined.addObject(
             "FixedConstraint", indices=0, name="FixedConstraint"
         )
-        instrument_combined.addObject(
+        instruments_combined.addObject(
             "RestShapeSpringsForceField",
             points="@m_ircontroller.indexFirstNode",
             angularStiffness=1e8,
@@ -344,9 +349,9 @@ class SOFACore:
             external_points=0,
             external_rest_shape="@DOFs",
         )
-        self._instruments_combined = instrument_combined
+        self._instruments_combined = instruments_combined
 
-        beam_collis = instrument_combined.addChild("CollisionModel")
+        beam_collis = instruments_combined.addChild("CollisionModel")
         beam_collis.activated = True
         beam_collis.addObject("EdgeSetTopologyContainer", name="collisEdgeSet")
         beam_collis.addObject("EdgeSetTopologyModifier", name="colliseEdgeModifier")
