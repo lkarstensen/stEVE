@@ -120,7 +120,11 @@ class BruteForceBFS(Pathfinder):
         shortest_path = None
 
         path = next(bfs_paths, None)
-        if len(path) == 2:
+        if path is None:
+            shortest_path_points = np.empty((1, 3))
+            shortest_path_length = 0.0
+
+        elif len(path) == 2:
             shortest_path_points = start_branch.get_path_along_branch(start, target)
             shortest_path_length = get_length(shortest_path_points)
 
