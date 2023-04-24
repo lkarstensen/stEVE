@@ -144,8 +144,13 @@ class Simulation(Intervention):
         action = np.array(action).reshape(self.action_space.shape)
         action = np.clip(action, -self.velocity_limits, self.velocity_limits)
         inserted_lengths = np.array(self._sofa_core.inserted_lengths)
+        max_lengths = np.array([device.length for device in self.devices])
 
         mask = np.where(inserted_lengths + action[:, 0] / self.image_frequency <= 0.0)
+        action[mask, 0] = 0.0
+        mask = np.where(
+            inserted_lengths + action[:, 0] / self.image_frequency >= max_lengths
+        )
         action[mask, 0] = 0.0
         tip = self.instrument_position_vessel_cs[0]
         if self.stop_device_at_tree_end and self.vessel_tree.at_tree_end(tip):

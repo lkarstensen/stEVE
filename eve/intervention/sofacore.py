@@ -272,7 +272,7 @@ class SOFACore:
         instruments_combined.addObject(
             "RegularGridTopology",
             name="MeshLines",
-            nx=nx,
+            nx=nx + 1,
             ny=1,
             nz=1,
             xmax=1.0,
