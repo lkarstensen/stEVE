@@ -7,7 +7,7 @@ class PathRatio(Info):
     def __init__(self, pathfinder: Pathfinder, name: str = "path_ratio") -> None:
         super().__init__(name)
         self.pathfinder = pathfinder
-        self.initial_pathlength = 0
+        self.initial_pathlength = 1
 
     @property
     def info(self) -> Dict[str, Any]:
