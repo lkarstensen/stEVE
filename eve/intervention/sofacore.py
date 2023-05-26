@@ -7,6 +7,7 @@ import numpy as np
 from .device import Device
 
 
+# TODO: Add friction as constructor variable
 class SOFACore:
     def __init__(
         self,
@@ -20,8 +21,12 @@ class SOFACore:
         self.camera = None
         self.target_node = None
         self.simulation_error = False
-        self._devices = None
 
+        self.init_visual_nodes = False
+        self.display_size = (1, 1)
+        self.target_size = 1
+
+        self._devices = None
         self._vessel_object = None
         self._instruments_combined = None
 
@@ -71,7 +76,8 @@ class SOFACore:
         if self.root is not None:
             self._sofa.Simulation.unload(self.root)
 
-    def do_sofa_steps(self, action: np.ndarray, n_steps: int):
+    def do_sofa_steps(self, action: np.ndarray, duration: float):
+        n_steps = int(duration / self.dt_simulation)
         for _ in range(n_steps):
             inserted_lengths = self.inserted_lengths
 
@@ -108,11 +114,8 @@ class SOFACore:
         insertion_point,
         insertion_direction,
         mesh_path,
-        add_visual: bool = False,
-        display_size: Optional[Tuple[int, int]] = None,
         coords_high: Optional[Tuple[float, float, float]] = None,
         coords_low: Optional[Tuple[float, float, float]] = None,
-        target_size: Optional[float] = None,
         vessel_visual_path: Optional[str] = None,
         seed: int = None,
     ):
@@ -129,11 +132,8 @@ class SOFACore:
             or np.any(insertion_direction != self._insertion_direction)
             or mesh_path != self._mesh_path
             or vessel_visual_path != self._vessel_visual_path
-            or add_visual != self._reset_add_visual
-            or display_size != self._display_size
             or np.any(coords_high != self._coords_high)
             or np.any(coords_low != self._coords_low)
-            or target_size != self._target_size
         ):
             if self.root is None:
                 self.root = self._sofa.Core.Node()
@@ -148,12 +148,12 @@ class SOFACore:
             self._add_device(
                 insertion_point=insertion_point, insertion_direction=insertion_direction
             )
-            if add_visual:
+            if self.init_visual_nodes:
                 self._add_visual(
-                    display_size,
+                    self.display_size,
                     coords_low,
                     coords_high,
-                    target_size,
+                    self.target_size,
                     vessel_visual_path=vessel_visual_path,
                 )
 
@@ -161,11 +161,8 @@ class SOFACore:
             self._insertion_point = insertion_point
             self._insertion_direction = insertion_direction
             self._mesh_path = mesh_path
-            self._reset_add_visual = add_visual
-            self._display_size = display_size
             self._coords_high = coords_high
             self._coords_low = coords_low
-            self._target_size = target_size
             self._vessel_visual_path = vessel_visual_path
             self.simulation_error = False
             self.logger.debug("Sofa Initialized")
@@ -228,8 +225,9 @@ class SOFACore:
 
     def _add_device(self, insertion_point, insertion_direction):
         for device in self._devices:
+            sofa_device = device.sofa_device
             topo_lines = self.root.addChild("topolines_" + device.name)
-            if not device.is_a_procedural_shape:
+            if not sofa_device.is_a_procedural_shape:
                 topo_lines.addObject(
                     "MeshObjLoader",
                     filename=device.mesh_path,
@@ -238,22 +236,22 @@ class SOFACore:
             topo_lines.addObject(
                 "WireRestShape",
                 name="rest_shape_" + device.name,
-                isAProceduralShape=device.is_a_procedural_shape,
-                straightLength=device.straight_length,
-                length=device.length,
-                spireDiameter=device.spire_diameter,
-                radiusExtremity=device.radius_extremity,
-                youngModulusExtremity=device.young_modulus_extremity,
-                massDensityExtremity=device.mass_density_extremity,
-                radius=device.radius,
-                youngModulus=device.young_modulus,
-                massDensity=device.mass_density,
-                poissonRatio=device.poisson_ratio,
-                keyPoints=device.key_points,
-                densityOfBeams=device.density_of_beams,
-                numEdgesCollis=device.num_edges_collis,
-                numEdges=device.num_edges,
-                spireHeight=device.spire_height,
+                isAProceduralShape=sofa_device.is_a_procedural_shape,
+                straightLength=sofa_device.straight_length,
+                length=sofa_device.length,
+                spireDiameter=sofa_device.spire_diameter,
+                radiusExtremity=sofa_device.radius_extremity,
+                youngModulusExtremity=sofa_device.young_modulus_extremity,
+                massDensityExtremity=sofa_device.mass_density_extremity,
+                radius=sofa_device.radius,
+                youngModulus=sofa_device.young_modulus,
+                massDensity=sofa_device.mass_density,
+                poissonRatio=sofa_device.poisson_ratio,
+                keyPoints=sofa_device.key_points,
+                densityOfBeams=sofa_device.density_of_beams,
+                numEdgesCollis=sofa_device.num_edges_collis,
+                numEdges=sofa_device.num_edges,
+                spireHeight=sofa_device.spire_height,
                 printLog=True,
                 template="Rigid3d",
             )
@@ -277,7 +275,7 @@ class SOFACore:
         )
         nx = 0
         for device in self._devices:
-            nx = sum([nx, sum(device.density_of_beams)])
+            nx = sum([nx, sum(device.sofa_device.density_of_beams)])
 
         instruments_combined.addObject(
             "RegularGridTopology",
@@ -311,13 +309,13 @@ class SOFACore:
                 "WireBeamInterpolation",
                 name="Interpol_" + device.name,
                 WireRestShape=wire_rest_shape,
-                radius=device.radius,
+                radius=device.sofa_device.radius,
                 printLog=False,
             )
             instruments_combined.addObject(
                 "AdaptiveBeamForceFieldAndMass",
                 name="ForceField_" + device.name,
-                massDensity=device.mass_density,
+                massDensity=device.sofa_device.mass_density,
                 interpolation="@Interpol_" + device.name,
             )
             x_tip.append(0.0)
@@ -430,7 +428,7 @@ class SOFACore:
             visu_node.addObject(
                 "Edge2QuadTopologicalMapping",
                 nbPointsOnEachCircle=10,
-                radius=device.radius,
+                radius=device.sofa_device.radius,
                 flipNormals="true",
                 input=mesh_lines,
                 output="@Container_" + device.name,

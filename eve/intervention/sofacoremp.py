@@ -64,9 +64,6 @@ class SOFACoreMP(SOFACore):
 
         self.simulation_error = False
 
-        self.camera = None
-        self.root = None
-
         self._sofa_process: mp.Process = None
         self._task_queue: mp.Queue = None
         self._result_queue: mp.Queue = None
@@ -123,9 +120,9 @@ class SOFACoreMP(SOFACore):
     def close(self):
         self._close_sofa_process()
 
-    def do_sofa_steps(self, action: np.ndarray, n_steps):
+    def do_sofa_steps(self, action: np.ndarray, duration):
         if self._task_queue is not None:
-            self._task_queue.put(["do_sofa_steps", [action, n_steps], {}])
+            self._task_queue.put(["do_sofa_steps", [action, duration], {}])
             self._get_result(timeout=self.step_timeout)
 
     def reset_sofa_devices(self):
@@ -138,11 +135,10 @@ class SOFACoreMP(SOFACore):
         insertion_point,
         insertion_direction,
         mesh_path,
-        add_visual: bool = False,
-        display_size: Optional[Tuple[int, int]] = None,
         coords_high: Optional[Tuple[float, float, float]] = None,
         coords_low: Optional[Tuple[float, float, float]] = None,
-        target_size: Optional[float] = None,
+        vessel_visual_path: Optional[str] = None,
+        seed: int = None,
     ):
         if self._sofa_process is None:
             self._new_sofa_process()
@@ -158,7 +154,15 @@ class SOFACoreMP(SOFACore):
             self._task_queue.put(
                 [
                     "reset",
-                    [insertion_point, insertion_direction, mesh_path, False],
+                    [
+                        insertion_point,
+                        insertion_direction,
+                        mesh_path,
+                        None,
+                        None,
+                        None,
+                        seed,
+                    ],
                     {},
                 ]
             )

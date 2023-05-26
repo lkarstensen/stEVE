@@ -1,9 +1,8 @@
-from dataclasses import dataclass, field
-from typing import List, Tuple, Union
-from .meshdevice import MeshDevice, StraightPart, Arc
+from dataclasses import dataclass
+from typing import Tuple
+from .device import MeshDevice, StraightPart, Arc
 
 
-@dataclass(frozen=True)
 class Simmons4Bends(MeshDevice):
     name: str = "Simmons"
     velocity_limit: Tuple[float, float] = (50, 3.14)
@@ -21,10 +20,6 @@ class Simmons4Bends(MeshDevice):
     beams_per_mm_tip: float = 1.4
     beams_per_mm_straight: float = 0.09
     color: Tuple[float, float, float] = (30, 144, 255)
-
-    elements: List[Union[StraightPart, Arc]] = field(
-        init=False, repr=False, default=None
-    )
 
     def __post_init__(self):
         elements = []
@@ -55,11 +50,18 @@ class Simmons4Bends(MeshDevice):
                     self.beams_per_mm_tip,
                 )
                 elements.append(straight)
-        object.__setattr__(self, "elements", elements)
-        super().__post_init__()
+        super().__init__(
+            elements,
+            self.outer_diameter,
+            self.inner_diameter,
+            self.poisson_ratio,
+            self.young_modulus,
+            self.mass_density,
+            self.color,
+        )
 
 
-@dataclass(frozen=True)
+@dataclass
 class Simmons3Bends(Simmons4Bends):
     name: str = "Simmons"
     velocity_limit: Tuple[float, float] = (50, 3.14)
