@@ -11,10 +11,10 @@ from eve.vesseltree.util.voxelcube import (
     create_voxel_cube_from_mesh,
     VoxelCube,
 )
-from eve.vesseltree.util.branch import Branch
+from eve.vesseltree.util.branch import BranchWithRadii
 
 
-def extend_branch_end(branch: Branch, start_end: str, length: int):
+def extend_branch_end(branch: BranchWithRadii, start_end: str, length: int):
     if start_end == "start":
         coord_idx = 0
         direction_idx = 1
@@ -45,7 +45,7 @@ def extend_branch_end(branch: Branch, start_end: str, length: int):
     #     new_coordinates = np.vstack([branch.coordinates, new_points])
     #     new_radii = np.concatenate([branch.radii, new_radii], axis=0)
 
-    return Branch(branch.name, new_points, new_radii)
+    return BranchWithRadii(branch.name, new_points, new_radii)
 
 
 def make_printable_vmr(

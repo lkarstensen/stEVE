@@ -1,3 +1,4 @@
+import numpy as np
 from .start import Start
 from ..intervention.intervention import Intervention
 
@@ -8,9 +9,5 @@ class MaxDeviceLength(Start):
         self.max_length = max_length
 
     def reset(self, episode_nr: int = 0) -> None:
-        reset = False
-        for inserted_length in self.intervention.device_lengths_inserted.values():
-            if inserted_length > self.max_length:
-                reset = True
-        if reset:
+        if np.any(self.intervention.device_lengths_inserted > self.max_length):
             self.intervention.reset_devices()

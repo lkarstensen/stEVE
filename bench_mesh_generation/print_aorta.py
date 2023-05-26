@@ -6,7 +6,7 @@ from eve.vesseltree.util.voxelcube import (
     create_empty_voxel_cube_from_branches,
     VoxelCube,
 )
-from eve.vesseltree.util.branch import Branch
+from eve.vesseltree.util.branch import BranchWithRadii
 from eve.vesseltree.vesseltree import VesselTree
 
 
@@ -110,7 +110,7 @@ def print_obj_from_selfmade(
         )
 
 
-def extend_branch_end(branch: Branch, start_end: str, length: int):
+def extend_branch_end(branch: BranchWithRadii, start_end: str, length: int):
     if start_end == "start":
         coord_idx = 0
         direction_idx = 1
@@ -134,14 +134,14 @@ def extend_branch_end(branch: Branch, start_end: str, length: int):
 
     new_radii = np.ones([n_points]) * radius
 
-    return Branch(branch.name, new_points, new_radii)
+    return BranchWithRadii(branch.name, new_points, new_radii)
 
 
 if __name__ == "__main__":
     vessel_tree = eve.vesseltree.AorticArch(
         seed=30,
-        rotate_yzx_deg=[0, -20, -5],
-        scale_xyzd=[1.0, 1.0, 1.0, 0.6],
+        rotation_yzx_deg=[0, -20, -5],
+        scaling_xyzd=[1.0, 1.0, 1.0, 0.6],
         omit_axis="y",
     )
     vessel_tree.reset()

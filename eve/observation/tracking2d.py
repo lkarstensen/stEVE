@@ -33,7 +33,7 @@ class Tracking2D(Observation):
 
     def _calculate_tracking_state(self) -> np.ndarray:
         tracking = self.intervention.tracking2d
-        inserted_length = max(self.intervention.device_lengths_inserted.values())
+        inserted_length = max(self.intervention.device_lengths_inserted)
         return self._evenly_distributed_tracking(tracking, inserted_length)
 
     def _evenly_distributed_tracking(

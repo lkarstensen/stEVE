@@ -6,8 +6,8 @@ if __name__ == "__main__":
     FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(format=FORMAT, level=logging.DEBUG)
     vessel_tree = eve.vesseltree.AorticArch(eve.vesseltree.ArchType.VII)
-    device = eve.intervention.device.JWire()
-    simulation = eve.intervention.Simulation(
+    device = eve.intervention.device.JShaped()
+    simulation = eve.intervention.MonoPlaneStatic(
         vessel_tree, [device], sofacore_mp=True, mp_timeout_step=1, image_frequency=7.5
     )
 

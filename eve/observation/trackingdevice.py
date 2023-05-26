@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..intervention.intervention import Intervention, Device
+from ..intervention.intervention import Intervention, SOFADevice
 from .tracking2d import Tracking2D
 
 
@@ -8,7 +8,7 @@ class TrackingDevice(Tracking2D):
     def __init__(
         self,
         intervention: Intervention,
-        device: Device,
+        device: SOFADevice,
         n_points: int = 2,
         resolution: float = 1.0,
         name: str = None,

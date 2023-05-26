@@ -65,11 +65,11 @@ class Pillow(Imaging):
         physics_image = Image.new(
             mode=self._image_mode, size=self.image_size, color=255
         )
+        lines = zip(trackings, diameters)
 
-        lines = [
-            [tracking, diameter]
-            for tracking, diameter in zip(trackings.values(), diameters.values())
-        ]
+        # lines = [
+        #     [tracking, diameter] for tracking, diameter in zip(trackings, diameters)
+        # ]
 
         lines = sorted(lines, key=lambda line: line[1])
         for i, line in enumerate(lines):

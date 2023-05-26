@@ -4,7 +4,7 @@ from math import inf
 import numpy as np
 
 from .pathfinder import Pathfinder, gym
-from ..vesseltree import Branch, VesselTree, BranchingPoint
+from ..vesseltree import BranchWithRadii, VesselTree, BranchingPoint
 from ..intervention.intervention import Intervention
 from ..target import Target
 
@@ -63,6 +63,7 @@ class BruteForceBFS(Pathfinder):
             path_branching_points = [
                 branching_point.coordinates for branching_point in path_branching_points
             ]
+            path_branching_points = np.array(path_branching_points)
             self.path_branching_points3d = self.intervention.vessel_cs_to_tracking3d(
                 path_branching_points
             )
@@ -108,8 +109,8 @@ class BruteForceBFS(Pathfinder):
 
     def _get_shortest_path(
         self,
-        start_branch: Branch,
-        target_branch: Branch,
+        start_branch: BranchWithRadii,
+        target_branch: BranchWithRadii,
         start: np.ndarray,
         target: np.ndarray,
     ):  # -> Tuple[List[BranchingPoint], float, List[CenterlinePoint]]:

@@ -7,10 +7,10 @@ import eve
 import eve.visualisation
 
 vessel_tree = eve.vesseltree.AorticArch()
-device = eve.intervention.device.JWire(beams_per_mm_straight=0.5)
+device = eve.intervention.device.JShaped(beams_per_mm_straight=0.5)
 device2 = eve.intervention.device.Simmons3Bends()
 
-simulation = eve.intervention.Simulation(
+simulation = eve.intervention.MonoPlaneStatic(
     vessel_tree=vessel_tree, devices=[device, device2], lao_rao_deg=-5, cra_cau_deg=20
 )
 start = eve.start.MaxDeviceLength(simulation, 380)

@@ -11,17 +11,21 @@ import eve.bench_candidates
 
 vessel_tree = eve.vesseltree.AorticArch(
     seed=30,
-    scale_xyzd=[1.0, 1.0, 1.0, 0.75],
-    rotate_yzx_deg=[0, -20, -5],
+    scaling_xyzd=[1.0, 1.0, 1.0, 0.75],
+    # rotation_yzx_deg=[0, -20, -5],
 )
 
 
-device = eve.intervention.device.JWire()
+device = eve.intervention.device.JShaped()
 
-simulation = eve.intervention.Simulation(
+sofa_core = eve.intervention.SOFACore()
+
+simulation = eve.intervention.MonoPlaneStatic(
     vessel_tree=vessel_tree,
     devices=[device],
     stop_device_at_tree_end=True,
+    sofa_core=sofa_core,
+    image_rot_zx=[20, 5],
 )
 start = eve.start.MaxDeviceLength(
     intervention=simulation,
@@ -38,6 +42,8 @@ pathfinder = eve.pathfinder.BruteForceBFS(
     intervention=simulation,
     target=target,
 )
+
+imaging = eve.imaging.Pillow(simulation, (1000, 2000))
 
 position = eve.observation.Tracking2D(
     intervention=simulation,
@@ -68,9 +74,8 @@ reward = eve.reward.Combination([target_reward, path_delta])
 target_reached = eve.terminal.TargetReached(target=target)
 max_steps = eve.truncation.MaxSteps(200)
 
-imaging = eve.imaging.Pillow(simulation, (1000, 2000))
 
-visualisation = SofaPygame(intervention=simulation, target=target)
+visualisation = SofaPygame(simulation=simulation, target=target)
 
 
 env = eve.Env(
@@ -150,7 +155,7 @@ while True:
     obs, reward, terminal, truncation, info = env.step(action=action)
     env.render()
     n_steps += 1
-    print(obs)
+    print(simulation.tracking3d[0])
     if keys_pressed[pygame.K_RETURN]:
         env.reset()
         n_steps = 0

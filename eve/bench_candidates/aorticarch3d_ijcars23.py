@@ -32,7 +32,7 @@ class AorticArch3D(eve.Env):
             episodes_between_change=episodes_between_vessel_change,
         )
 
-        device = eve.intervention.device.JWire(velocity_limit=(30, 3.14))
+        device = eve.intervention.device.JShaped(velocity_limit=(30, 3.14))
         simulation = eve.intervention.Intervention(
             vessel_tree=vessel_tree,
             devices=[device],

@@ -4,7 +4,7 @@ import importlib
 import numpy as np
 
 from .visualisation import Visualisation
-from ..intervention import Intervention
+from ..intervention import Simulation
 from ..interimtarget import InterimTarget, InterimTargetDummy
 from ..target import Target as TargetClass
 
@@ -12,26 +12,27 @@ from ..target import Target as TargetClass
 class SofaPygame(Visualisation):
     def __init__(
         self,
-        intervention: Intervention,
+        simulation: Simulation,
         display_size: Tuple[float, float] = (1200, 860),
         interim_target: InterimTarget = None,
         target: TargetClass = None,
     ) -> None:
-        self.intervention = intervention
+        self.simulation = simulation
         self.display_size = display_size
         self.interim_target = interim_target or InterimTargetDummy()
         self.target = target
 
-        self.intervention.init_visual_nodes = True
-        self.intervention.display_size = display_size
+        self.simulation.sofa_core.init_visual_nodes = True
+        self.simulation.sofa_core.display_size = display_size
         if target is not None:
-            self.intervention.target_size = target.threshold
+            self.simulation.sofa_core.target_size = target.threshold
 
         self.initial_orientation = None
         self._initialized = False
-        self._theta_x = intervention.cra_cau_deg * np.pi / 180
-        self._theta_z = intervention.lao_rao_deg * np.pi / 180
+        self._theta_x = simulation.image_rot_zx[1] * np.pi / 180
+        self._theta_z = simulation.image_rot_zx[0] * np.pi / 180
         self._initial_direction = None
+        self._initial_look_at = None
         self._distance = None
         self._sofa = None
         self._sofa_gl = None
@@ -40,14 +41,14 @@ class SofaPygame(Visualisation):
         self._pygame = None
 
     def render(self) -> None:
-        self._sofa.Simulation.updateVisual(self.intervention.sofa_root)
+        self._sofa.Simulation.updateVisual(self.simulation.sofa_core.root)
         gl = self._opengl_gl
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glEnable(gl.GL_LIGHTING)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        camera = self.intervention.sofa_camera
+        camera = self.simulation.sofa_core.camera
         width = camera.widthViewport.value
         height = camera.heightViewport.value
         self._opengl_glu.gluPerspective(
@@ -61,7 +62,7 @@ class SofaPygame(Visualisation):
 
         camera_mvm = camera.getOpenGLModelViewMatrix()
         gl.glMultMatrixd(camera_mvm)
-        self._sofa_gl.draw(self.intervention.sofa_root)
+        self._sofa_gl.draw(self.simulation.sofa_core.root)
         gl = self._opengl_gl
         height = camera.heightViewport.value
         width = camera.widthViewport.value
@@ -98,11 +99,11 @@ class SofaPygame(Visualisation):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LESS)
         self._sofa.SofaGL.glewInit()
-        self._sofa.Simulation.initVisual(self.intervention.sofa_root)
-        self._sofa.Simulation.initTextures(self.intervention.sofa_root)
+        self._sofa.Simulation.initVisual(self.simulation.sofa_core.root)
+        self._sofa.Simulation.initTextures(self.simulation.sofa_core.root)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        camera = self.intervention.sofa_camera
+        camera = self.simulation.sofa_core.camera
         width = camera.widthViewport.value
         height = camera.heightViewport.value
         self._opengl_glu.gluPerspective(
@@ -126,24 +127,26 @@ class SofaPygame(Visualisation):
         self._initial_direction = position - look_at
         self._distance = np.linalg.norm(self._initial_direction)
         self._initial_direction = self._initial_direction / self._distance
-        self._theta_x = self.intervention.cra_cau_deg * np.pi / 180
-        self._theta_z = self.intervention.lao_rao_deg * np.pi / 180
+        self._initial_look_at = self.simulation.image_center
+        self._theta_x = self.simulation.image_rot_zx[1] * np.pi / 180
+        self._theta_z = self.simulation.image_rot_zx[0] * np.pi / 180
+        camera.lookAt = self._initial_look_at
         self.rotate(0, 0)
         if self.target is not None:
             target = self.target.coordinates_vessel_cs
-            self.intervention.sofa_target_node.MechanicalObject.translation = [
+            self.simulation.sofa_core.target_node.MechanicalObject.translation = [
                 target[0],
                 target[1],
                 target[2],
             ]
-            self._sofa.Simulation.init(self.intervention.sofa_target_node)
+            self._sofa.Simulation.init(self.simulation.sofa_core.target_node)
 
     def close(self):
         self._pygame.quit()  # pylint: disable=no-member
 
     def translate(self, velocity: np.array):
-        dt = self.intervention.sofa_root.dt.value
-        camera = self.intervention.sofa_camera
+        dt = self.simulation.sofa_core.root.dt.value
+        camera = self.simulation.sofa_core.camera
 
         position = camera.position
         position += velocity * dt
@@ -154,8 +157,8 @@ class SofaPygame(Visualisation):
         camera.lookAt = look_at
 
     def zoom(self, velocity: float):
-        dt = self.intervention.sofa_root.dt.value
-        camera = self.intervention.sofa_camera
+        dt = self.simulation.sofa_core.root.dt.value
+        camera = self.simulation.sofa_core.camera
 
         position = camera.position
         look_at = camera.lookAt
@@ -169,8 +172,8 @@ class SofaPygame(Visualisation):
         camera.position = position
 
     def rotate(self, lao_rao_speed: float, cra_cau_speed: float):
-        dt = self.intervention.sofa_root.dt.value
-        camera = self.intervention.sofa_camera
+        dt = self.simulation.sofa_core.root.dt.value
+        camera = self.simulation.sofa_core.camera
 
         look_at = camera.lookAt
         self._theta_x += cra_cau_speed * dt

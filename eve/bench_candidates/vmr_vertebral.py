@@ -16,12 +16,12 @@ class VertebralStaticEnv(eve.Env):
             insertion_vessel_name="lva",
             rotate_yzx_deg=[0, 180, 0],
         )
-        device = eve.intervention.device.JWire(
+        device = eve.intervention.device.JShaped(
             tip_outer_diameter=0.3,
             straight_outer_diameter=0.3,
             beams_per_mm_straight=0.9,
         )
-        device2 = eve.intervention.device.JWire(
+        device2 = eve.intervention.device.JShaped(
             name="cath",
             tip_outer_diameter=0.4,
             straight_outer_diameter=0.4,

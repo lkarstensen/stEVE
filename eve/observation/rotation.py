@@ -19,7 +19,7 @@ class Rotations(Observation):
         return gym.spaces.Box(low=low, high=high, dtype=np.float32)
 
     def step(self) -> None:
-        rotation_data = self.intervention.device_rotations.values()
+        rotation_data = self.intervention.device_rotations
         state = [[sin(rotation), cos(rotation)] for rotation in rotation_data]
         self.obs = np.array(state, dtype=np.float32)
 
