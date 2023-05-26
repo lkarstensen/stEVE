@@ -1,6 +1,6 @@
 from typing import Tuple, List
 
-from ..util.branch import Branch
+from ..util.branch import BranchWithRadii
 from ..util.cubichermitesplines import CHSPoint, chs_point_normal, chs_to_cl_points
 
 import numpy as np
@@ -10,7 +10,7 @@ def common_origin_VI(
     start: Tuple[float, float, float],
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -40,14 +40,14 @@ def common_origin_VI(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("co", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("co", cl_coordinates, cl_radii), chs_points
 
 
 def common_origin_IV(
     start: Tuple[float, float, float],
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -77,4 +77,4 @@ def common_origin_IV(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("co", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("co", cl_coordinates, cl_radii), chs_points

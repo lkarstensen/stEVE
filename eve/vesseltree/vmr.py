@@ -1,10 +1,10 @@
 from xml.dom import minidom
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 import os
 import numpy as np
 import pyvista as pv
 from .vesseltree import VesselTree, Insertion, gym
-from .util.branch import Branch, calc_branching, rotate
+from .util.branch import Branch, calc_branching, rotate_branches
 from .util import calc_insertion
 from .util.meshing import get_temp_mesh_path
 from .util.vmrdownload import download_vmr_files
@@ -34,7 +34,7 @@ def _get_available_pths(directory: str) -> List[str]:
     return pth_files
 
 
-def _get_vtk_file(directory: str, file_ending: str = ".vtp") -> str:
+def _get_vtk_file(directory: str, file_ending: str) -> str:
     for file in os.listdir(directory):
         if file.endswith(file_ending):
             path = os.path.join(directory, file)
@@ -52,7 +52,6 @@ def _load_points_from_pth(pth_file_path: str, vtu_mesh: pv.UnstructuredGrid) -> 
     xml_points = tree.getElementsByTagName("pos")
 
     points = []
-    radii = []
     low = np.array([vtu_mesh.bounds[0], vtu_mesh.bounds[2], vtu_mesh.bounds[4]])
     high = np.array([vtu_mesh.bounds[1], vtu_mesh.bounds[3], vtu_mesh.bounds[5]])
     low += LOW_HIGH_BUFFER
@@ -64,19 +63,13 @@ def _load_points_from_pth(pth_file_path: str, vtu_mesh: pv.UnstructuredGrid) -> 
         if np.any([x, y, z] < low) or np.any([x, y, z] > high):
             continue
         points.append([x, y, z])
-        radii.append(10.0)
     points = np.array(points, dtype=np.float32)
-    radii = np.array(radii, dtype=np.float32)
-
-    to_keep = vtu_mesh.find_containing_cell(points)
-    to_keep += 1
+    to_keep = vtu_mesh.find_containing_cell(points) + 1
     to_keep = np.argwhere(to_keep)
     points = points[to_keep.reshape(-1)]
-    radii = radii[to_keep.reshape(-1)]
     return Branch(
         name=name.lower(),
         coordinates=np.array(points, dtype=np.float32),
-        radii=np.array(radii, dtype=np.float32),
     )
 
 
@@ -84,15 +77,17 @@ class VMR(VesselTree):
     def __init__(
         self,
         model: str,
+        insertion_vessel_name: str,
         insertion_point_idx: int,
         insertion_direction_idx_diff: int,
-        insertion_vessel_name: str = "aorta",
+        approx_branch_radii: Union[List[float], float],
         rotate_yzx_deg: Optional[Tuple[float, float, float]] = None,
     ) -> None:
         self.model = model
         self.insertion_point_idx = insertion_point_idx
         self.insertion_direction_idx_diff = insertion_direction_idx_diff
         self.insertion_vessel_name = insertion_vessel_name.lower()
+        self.approx_branch_radii = approx_branch_radii
         self.rotate_yzx_deg = rotate_yzx_deg
 
         self._model_folder = download_vmr_files(model)
@@ -134,7 +129,7 @@ class VMR(VesselTree):
             self.insertion_point_idx + self.insertion_direction_idx_diff,
         )
         self.insertion = Insertion(ip, ip_dir)
-        self.branching_points = calc_branching(self.branches)
+        self.branching_points = calc_branching(self.branches, self.approx_branch_radii)
         self._mesh_path = None
 
     def _read_branches(self):
@@ -144,7 +139,7 @@ class VMR(VesselTree):
         branches = _get_branches(self._model_folder, mesh)
 
         if self.rotate_yzx_deg is not None:
-            branches = rotate(branches, self.rotate_yzx_deg)
+            branches = rotate_branches(branches, self.rotate_yzx_deg)
         return branches
 
     def _calc_coord_space(self, branches):

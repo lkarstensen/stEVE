@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 from abc import ABC, abstractmethod
 import numpy as np
 import gymnasium as gym
@@ -17,13 +17,13 @@ class Insertion:
 class VesselTree(EveObject, ABC):
     # Set in subclasses in __init__() or reset():
     branches: Tuple[Branch]
-    insertion: Insertion
     branching_points: List[BranchingPoint]
     centerline_coordinates: np.ndarray
-    mesh_path: str
+    insertion: Insertion
     coordinate_space: gym.spaces.Box
     coordinate_space_episode: gym.spaces.Box
-    visu_mesh_path: Optional[str] = None
+    mesh_path: str
+    visu_mesh_path: str
 
     def step(self) -> None:
         ...
@@ -32,32 +32,14 @@ class VesselTree(EveObject, ABC):
     def reset(self, episode_nr=0, seed: int = None) -> None:
         ...
 
-    def __getitem__(self, item: Union[int, str]):
-        if isinstance(item, int):
-            idx = item
-        else:
-            branch_names = tuple(branch.name for branch in self.branches)
-            idx = branch_names.index(item)
-        return self.branches[idx]
-
-    def values(self) -> Tuple[Branch]:
-        return self.branches
-
-    def keys(self) -> Tuple[str]:
-        return tuple(branch.name for branch in self.branches)
-
-    def items(self):
-        branch_names = tuple(branch.name for branch in self.branches)
-        return zip(branch_names, self.branches)
-
     def find_nearest_branch_to_point(self, point: np.ndarray) -> Branch:
         nearest_branch = None
-        minDist = np.inf
+        min_dist = np.inf
         for branch in self.branches:
             distances = np.linalg.norm(branch.coordinates - point, axis=1)
             dist = np.min(distances)
-            if dist < minDist:
-                minDist = dist
+            if dist < min_dist:
+                min_dist = dist
                 nearest_branch = branch
         return nearest_branch
 
@@ -83,3 +65,21 @@ class VesselTree(EveObject, ABC):
             return end_is_open
         else:
             return False
+
+    def __getitem__(self, item: Union[int, str]):
+        if isinstance(item, int):
+            idx = item
+        else:
+            branch_names = tuple(branch.name for branch in self.branches)
+            idx = branch_names.index(item)
+        return self.branches[idx]
+
+    def values(self) -> Tuple[Branch]:
+        return self.branches
+
+    def keys(self) -> Tuple[str]:
+        return tuple(branch.name for branch in self.branches)
+
+    def items(self):
+        branch_names = tuple(branch.name for branch in self.branches)
+        return zip(branch_names, self.branches)

@@ -12,10 +12,8 @@ class VesselTreeDummy(VesselTree):
         self.centerline_coordinates = np.zeros((1, 3), dtype=np.float32)
         self.coordinate_space = gym.spaces.Box(0.0, 0.0, (3,))
         self.coordinate_space_episode = gym.spaces.Box(0.0, 0.0, (3,))
-
-    @property
-    def mesh_path(self) -> str:
-        return None
+        self.mesh_path = None
+        self.visu_mesh_path = None
 
     def step(self) -> None:
         ...

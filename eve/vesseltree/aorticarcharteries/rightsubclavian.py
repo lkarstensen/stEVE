@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from ..util.branch import Branch
+from ..util.branch import BranchWithRadii
 from ..util.cubichermitesplines import CHSPoint, chs_point_normal, chs_to_cl_points
 
 import numpy as np
@@ -11,7 +11,7 @@ def right_subclavian(
     start_cp_chs: CHSPoint,
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -46,14 +46,14 @@ def right_subclavian(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("rsa", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("rsa", cl_coordinates, cl_radii), chs_points
 
 
 def right_subclavian_IV(
     start: Tuple[float, float, float],
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -83,14 +83,14 @@ def right_subclavian_IV(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("rsa", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("rsa", cl_coordinates, cl_radii), chs_points
 
 
 def right_subclavian_V(
     start: Tuple[float, float, float],
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -120,7 +120,7 @@ def right_subclavian_V(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("rsa", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("rsa", cl_coordinates, cl_radii), chs_points
 
 
 def right_subclavian_VI(
@@ -128,7 +128,7 @@ def right_subclavian_VI(
     start_cp_chs: CHSPoint,
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -163,4 +163,4 @@ def right_subclavian_VI(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("rsa", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("rsa", cl_coordinates, cl_radii), chs_points

@@ -3,8 +3,8 @@ import os
 from typing import Iterable, Tuple
 import numpy as np
 import pyvista as pv
-
-from .voxelcube import VoxelCube, create_empty_voxel_cube_from_branches, Branch
+from .branch import BranchWithRadii
+from .voxelcube import VoxelCube, create_empty_voxel_cube_from_branches
 
 
 def get_surface_mesh(
@@ -35,7 +35,7 @@ def save_mesh(mesh: pv.PolyData, path: str):
 
 
 def generate_mesh(
-    branches: Iterable[Branch],
+    branches: Iterable[BranchWithRadii],
     mesh_path: str,
     decimate_factor: 0.99,
     gradient_direction: str = "descent",
@@ -57,7 +57,7 @@ def generate_mesh(
 
 
 def generate_temp_mesh(
-    branches: Iterable[Branch], name_base: str, decimate_factor=0.99
+    branches: Iterable[BranchWithRadii], name_base: str, decimate_factor=0.99
 ) -> str:
     mesh_path = get_temp_mesh_path(name_base)
     generate_mesh(branches, mesh_path, decimate_factor)

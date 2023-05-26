@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from ..util.branch import Branch
+from ..util.branch import BranchWithRadii
 from ..util.cubichermitesplines import CHSPoint, chs_point_normal, chs_to_cl_points
 
 import numpy as np
@@ -9,7 +9,7 @@ import numpy as np
 def aorta_generator(
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -66,4 +66,4 @@ def aorta_generator(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("aorta", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("aorta", cl_coordinates, cl_radii), chs_points

@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from ..util.branch import Branch
+from ..util.branch import BranchWithRadii
 from ..util.cubichermitesplines import CHSPoint, chs_point_normal, chs_to_cl_points
 
 import numpy as np
@@ -10,7 +10,7 @@ def left_subclavian(
     start: Tuple[float, float, float],
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
 
     chs_points: List[CHSPoint] = []
@@ -41,14 +41,14 @@ def left_subclavian(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("lsa", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("lsa", cl_coordinates, cl_radii), chs_points
 
 
 def left_subclavian_IV(
     start: Tuple[float, float, float],
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
 
     chs_points: List[CHSPoint] = []
@@ -80,14 +80,14 @@ def left_subclavian_IV(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("lsa", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("lsa", cl_coordinates, cl_radii), chs_points
 
 
 def left_subclavian_VI(
     start: Tuple[float, float, float],
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
 
     chs_points: List[CHSPoint] = []
@@ -119,4 +119,4 @@ def left_subclavian_VI(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("lsa", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("lsa", cl_coordinates, cl_radii), chs_points

@@ -130,7 +130,7 @@ class AorticArchRandom(VesselTree):
                 high_global = np.maximum(high_global, vessel.coordinate_space.high)
         return gym.spaces.Box(low=low_global, high=high_global)
 
-    def _randomize_vessel(self):
+    def _randomize_vessel(self) -> AorticArch:
         arch_type = self._rng.choice(self._arch_types)
         vessel_seed = (
             self._rng.choice(self.seeds_vessel)

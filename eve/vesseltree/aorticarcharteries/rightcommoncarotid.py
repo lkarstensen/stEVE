@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from ..util.branch import Branch
+from ..util.branch import BranchWithRadii
 from ..util.cubichermitesplines import CHSPoint, chs_point_normal, chs_to_cl_points
 
 import numpy as np
@@ -10,7 +10,7 @@ def right_common_carotid(
     start: Tuple[float, float, float],
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -40,7 +40,7 @@ def right_common_carotid(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("rcca", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("rcca", cl_coordinates, cl_radii), chs_points
 
 
 def right_common_carotid_V(
@@ -48,7 +48,7 @@ def right_common_carotid_V(
     start_cp_chs: CHSPoint,
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -82,14 +82,14 @@ def right_common_carotid_V(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("rcca", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("rcca", cl_coordinates, cl_radii), chs_points
 
 
 def right_common_carotid_VII(
     start: Tuple[float, float, float],
     resolution: float,
     rng: np.random.Generator = None,
-) -> Tuple[Branch, List[CHSPoint]]:
+) -> Tuple[BranchWithRadii, List[CHSPoint]]:
     rng = rng or np.random.default_rng()
     chs_points: List[CHSPoint] = []
     chs_points.append(
@@ -119,4 +119,4 @@ def right_common_carotid_VII(
         )
     )
     cl_coordinates, cl_radii = chs_to_cl_points(chs_points, resolution)
-    return Branch("rcca", cl_coordinates, cl_radii), chs_points
+    return BranchWithRadii("rcca", cl_coordinates, cl_radii), chs_points

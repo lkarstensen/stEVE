@@ -2,8 +2,14 @@ from typing import Optional, Tuple
 from enum import Enum
 import numpy as np
 
-from .vesseltree import VesselTree, Insertion, Branch, gym
-from .util.branch import calc_branching, scale, rotate, fill_axis_with_dummy_value
+from .vesseltree import VesselTree, Insertion, gym
+from .util.branch import (
+    calc_branching_with_radii,
+    scale_branches_xyzd,
+    rotate_branches,
+    omit_branches_axis,
+    BranchWithRadii,
+)
 from .aorticarcharteries import (
     aorta_generator,
     brachiocephalic_trunk_static,
@@ -31,8 +37,7 @@ class ArchType(str, Enum):
     I = "I"
     II = "II"
     IV = "IV"
-    Va = "Va"
-    Vb = "Vb"
+    V = "V"
     VI = "VI"
     VII = "VII"
 
@@ -42,14 +47,14 @@ class AorticArch(VesselTree):
         self,
         arch_type: ArchType = ArchType.I,
         seed: Optional[int] = None,
-        rotate_yzx_deg: Optional[Tuple[float, float, float]] = None,
-        scale_xyzd: Optional[Tuple[float, float, float, float]] = None,
+        rotation_yzx_deg: Optional[Tuple[float, float, float]] = None,
+        scaling_xyzd: Optional[Tuple[float, float, float, float]] = None,
         omit_axis: Optional[str] = None,
     ) -> None:
         self.arch_type = arch_type
         self.seed = seed or np.random.randint(0, 10**10)
-        self.rotate_yzx_deg = rotate_yzx_deg
-        self.scale_xyzd = scale_xyzd
+        self.rotate_yzx_deg = rotation_yzx_deg
+        self.scale_xyzd = scaling_xyzd
         self.omit_axis = omit_axis
 
         self._mesh_path = None
@@ -68,6 +73,10 @@ class AorticArch(VesselTree):
             self._mesh_path = generate_temp_mesh(self.branches, "aorticarch", 0.99)
         return self._mesh_path
 
+    @property
+    def visu_mesh_path(self) -> str:
+        return self.mesh_path
+
     def reset(self, episode_nr=0, seed: int = None) -> None:
         if self.branches is None:
             branches = self._generate_branches()
@@ -78,7 +87,7 @@ class AorticArch(VesselTree):
             self.centerline_coordinates = np.concatenate(centerline_coordinates)
             self.branches = branches
             self.insertion = Insertion(insertion_point, ip_dir)
-            self.branching_points = calc_branching(branches)
+            self.branching_points = calc_branching_with_radii(branches)
             self._mesh_path = None
 
     def _calc_coord_space(self, branches):
@@ -92,14 +101,14 @@ class AorticArch(VesselTree):
     def _generate_branches(self):
         branches = self._generate_unmodified_branches()
         if self.rotate_yzx_deg is not None:
-            branches = rotate(branches, self.rotate_yzx_deg)
+            branches = rotate_branches(branches, self.rotate_yzx_deg)
         if self.scale_xyzd is not None:
-            branches = scale(branches, self.scale_xyzd)
+            branches = scale_branches_xyzd(branches, self.scale_xyzd)
         if self.omit_axis is not None:
-            branches = fill_axis_with_dummy_value(branches, self.omit_axis)
+            branches = omit_branches_axis(branches, self.omit_axis)
         return branches
 
-    def _generate_unmodified_branches(self) -> Tuple[Branch]:
+    def _generate_unmodified_branches(self) -> Tuple[BranchWithRadii]:
         rng = np.random.default_rng(self.seed)
         normal = rng.normal
 
@@ -119,18 +128,12 @@ class AorticArch(VesselTree):
                 rng, normal, aorta_resolution, bct_resolution, aorta
             )
 
-        elif self.arch_type == ArchType.Va:
-            branches = self._create_Va(rng, normal, aorta_resolution, aorta)
+        elif self.arch_type == ArchType.V:
+            if rng.random() < 0.5:
+                branches = self._create_Va(rng, normal, aorta_resolution, aorta)
+            else:
+                branches = self._create_Vb(rng, normal, aorta_resolution, aorta)
 
-        elif self.arch_type == ArchType.Vb:
-            branches = self._create_Vb(rng, normal, aorta_resolution, aorta)
-
-        # TODO: Change this after IJCARS23
-        # elif self.arch_type == ArchType.V:
-        #     if rng.random() < 0.5:
-        #         branches = self._create_Va(rng, normal, aorta_resolution, aorta)
-        #     else:
-        #         branches = self._create_Vb(rng, normal, aorta_resolution, aorta)
         elif self.arch_type == ArchType.VI:
             branches = self._create_VI(rng, normal, aorta_resolution, aorta)
 
@@ -141,7 +144,7 @@ class AorticArch(VesselTree):
 
         return tuple(branches)
 
-    def _create_VII(self, rng, normal, aorta_resolution, aorta):
+    def _create_VII(self, rng, normal, aorta_resolution, aorta: BranchWithRadii):
         distance_aorta_end_rsca = normal(38, 3.5)
         idx = int(np.round(distance_aorta_end_rsca / aorta_resolution, 0))
         rsa, _ = right_subclavian_IV(aorta.coordinates[-idx], 1, rng)
@@ -159,7 +162,7 @@ class AorticArch(VesselTree):
         lsa, _ = left_subclavian(aorta.coordinates[-idx], 1, rng)
         return [aorta, rcca, rsa, lcca, lsa]
 
-    def _create_VI(self, rng, normal, aorta_resolution, aorta):
+    def _create_VI(self, rng, normal, aorta_resolution, aorta: BranchWithRadii):
         distance_aorta_end_bct = normal(36, 3)
         idx = int(np.round(distance_aorta_end_bct / aorta_resolution, 0))
         bct, bct_chs_points = brachiocephalic_trunk_static(
@@ -179,7 +182,7 @@ class AorticArch(VesselTree):
         lsa, _ = left_subclavian_VI(co.coordinates[-1], 1, rng)
         return [aorta, bct, co, rcca, rsa, lcca, lsa]
 
-    def _create_Vb(self, rng, normal, aorta_resolution, aorta):
+    def _create_Vb(self, rng, normal, aorta_resolution, aorta: BranchWithRadii):
         distance_aorta_end_rcca = normal(50, 2.5)
         idx = int(np.round(distance_aorta_end_rcca / aorta_resolution, 0))
         rcca, _ = right_common_carotid_VII(aorta.coordinates[-idx], 1, rng)
@@ -197,7 +200,7 @@ class AorticArch(VesselTree):
         rsa, _ = right_subclavian_V(aorta.coordinates[-idx], 1, rng)
         return [aorta, rcca, rsa, lcca, lsa]
 
-    def _create_Va(self, rng, normal, aorta_resolution, aorta):
+    def _create_Va(self, rng, normal, aorta_resolution, aorta: BranchWithRadii):
         distance_aorta_end_bct = normal(36, 3)
         idx = int(np.round(distance_aorta_end_bct / aorta_resolution, 0))
         bct, bct_chs_points = brachiocephalic_trunk_static(
@@ -218,7 +221,9 @@ class AorticArch(VesselTree):
         rsa, _ = right_subclavian_V(aorta.coordinates[-idx], 1, rng)
         return [aorta, bct, rcca, rsa, lcca, lsa]
 
-    def _create_type_IV(self, rng, normal, aorta_resolution, bct_resolution, aorta):
+    def _create_type_IV(
+        self, rng, normal, aorta_resolution, bct_resolution, aorta: BranchWithRadii
+    ):
         distance_aorta_end_rsca = normal(42, 5)
         idx = int(np.round(distance_aorta_end_rsca / aorta_resolution, 0))
         rsa, _ = right_subclavian_IV(aorta.coordinates[-idx], 1, rng)
@@ -235,7 +240,9 @@ class AorticArch(VesselTree):
         lsa, _ = left_subclavian_IV(aorta.coordinates[-idx], 1, rng)
         return [aorta, co, rcca, rsa, lcca, lsa]
 
-    def _create_type_II(self, rng, normal, aorta_resolution, bct_resolution, aorta):
+    def _create_type_II(
+        self, rng, normal, aorta_resolution, bct_resolution, aorta: BranchWithRadii
+    ):
         distance_aorta_end_bct = normal(36, 3)
         idx = int(np.round(distance_aorta_end_bct / aorta_resolution, 0))
         bct, bct_chs_points = brachiocephalic_trunk_static(
@@ -259,7 +266,7 @@ class AorticArch(VesselTree):
         lsa, _ = left_subclavian(aorta.coordinates[-idx], 1, rng)
         return [aorta, bct, rcca, rsa, lcca, lsa]
 
-    def _create_type_I(self, rng, normal, aorta_resolution, aorta):
+    def _create_type_I(self, rng, normal, aorta_resolution, aorta: BranchWithRadii):
         distance_aorta_end_bct = normal(36, 5)
         idx = int(np.round(distance_aorta_end_bct / aorta_resolution, 0))
         bct, bct_chs_points = brachiocephalic_trunk_static(
