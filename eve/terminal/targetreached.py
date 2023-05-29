@@ -1,14 +1,14 @@
 from . import Terminal
-from ..target import Target
+from ..intervention import Intervention
 
 
 class TargetReached(Terminal):
-    def __init__(self, target: Target) -> None:
-        self.target = target
+    def __init__(self, intervention: Intervention) -> None:
+        self.intervention = intervention
 
     @property
     def terminal(self) -> bool:
-        return self.target.reached
+        return self.intervention.target.reached
 
     def step(self) -> None:
         ...

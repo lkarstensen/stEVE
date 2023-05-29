@@ -1,5 +1,5 @@
 from .reward import Reward
-from ..intervention.intervention import Intervention
+from ..intervention import Intervention
 
 
 class LastAction(Reward):

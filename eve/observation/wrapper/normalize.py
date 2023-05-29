@@ -9,8 +9,7 @@ class Normalize(Observation):
         wrapped_obs: Observation,
         name: Optional[str] = None,
     ) -> None:
-        name = name or wrapped_obs.name
-        super().__init__(name)
+        self.name = name or wrapped_obs.name
         self.wrapped_obs = wrapped_obs
 
     @property

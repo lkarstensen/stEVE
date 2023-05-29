@@ -1,15 +1,13 @@
 # pylint: disable=no-member
 
-import os
 from time import perf_counter
 import pygame
 import numpy as np
 import eve
 from eve.visualisation.sofapygame import SofaPygame
-import eve.bench_candidates
 
 
-vessel_tree = eve.vesseltree.AorticArch(
+vessel_tree = eve.intervention.vesseltree.AorticArch(
     seed=30,
     scaling_xyzd=[1.0, 1.0, 1.0, 0.75],
     # rotation_yzx_deg=[0, -20, -5],
@@ -18,50 +16,50 @@ vessel_tree = eve.vesseltree.AorticArch(
 
 device = eve.intervention.device.JShaped()
 
-sofa_core = eve.intervention.SOFACore()
+simulation = eve.intervention.simulation.Simulation(friction=0.001)
 
-simulation = eve.intervention.MonoPlaneStatic(
+fluoroscopy = eve.intervention.fluoroscopy.Fluoroscopy(
+    simulation=simulation,
     vessel_tree=vessel_tree,
-    devices=[device],
-    stop_device_at_tree_end=True,
-    sofa_core=sofa_core,
+    image_frequency=7.5,
     image_rot_zx=[20, 5],
 )
-start = eve.start.MaxDeviceLength(
-    intervention=simulation,
-    max_length=500,
-)
-target = eve.target.CenterlineRandom(
+
+target = eve.intervention.target.CenterlineRandom(
     vessel_tree=vessel_tree,
-    intervention=simulation,
+    fluoroscopy=fluoroscopy,
     threshold=5,
     branches=["lcca", "rcca", "lsa", "rsa", "bct", "co"],
 )
-pathfinder = eve.pathfinder.BruteForceBFS(
+
+
+intervention = eve.intervention.MonoPlaneStatic(
     vessel_tree=vessel_tree,
-    intervention=simulation,
+    devices=[device],
+    simulation=simulation,
+    fluoroscopy=fluoroscopy,
     target=target,
 )
 
-imaging = eve.imaging.Pillow(simulation, (1000, 2000))
 
-position = eve.observation.Tracking2D(
-    intervention=simulation,
-    n_points=5,
-)
-position = eve.observation.wrapper.NormalizeTracking2DEpisode(position, simulation)
-target_state = eve.observation.Target2D(target=target)
+start = eve.start.MaxDeviceLength(intervention=intervention, max_length=500)
+pathfinder = eve.pathfinder.BruteForceBFS(intervention=intervention)
+
+
+position = eve.observation.Tracking2D(intervention=intervention, n_points=5)
+position = eve.observation.wrapper.NormalizeTracking2DEpisode(position, intervention)
+target_state = eve.observation.Target2D(intervention=intervention)
 target_state = eve.observation.wrapper.NormalizeTracking2DEpisode(
-    target_state, simulation
+    target_state, intervention
 )
-rotation = eve.observation.Rotations(intervention=simulation)
+rotation = eve.observation.Rotations(intervention=intervention)
 
 state = eve.observation.ObsDict(
     {"position": position, "target": target_state, "rotation": rotation}
 )
 
 target_reward = eve.reward.TargetReached(
-    target=target,
+    intervention=intervention,
     factor=1.0,
 )
 path_delta = eve.reward.PathLengthDelta(
@@ -71,33 +69,23 @@ path_delta = eve.reward.PathLengthDelta(
 reward = eve.reward.Combination([target_reward, path_delta])
 
 
-target_reached = eve.terminal.TargetReached(target=target)
+target_reached = eve.terminal.TargetReached(intervention=intervention)
 max_steps = eve.truncation.MaxSteps(200)
 
 
-visualisation = SofaPygame(simulation=simulation, target=target)
+visualisation = SofaPygame(intervention=intervention)
 
 
 env = eve.Env(
-    vessel_tree=vessel_tree,
-    intervention=simulation,
-    start=start,
-    target=target,
+    intervention=intervention,
     observation=state,
     reward=reward,
     terminal=target_reached,
     truncation=max_steps,
     visualisation=visualisation,
+    start=start,
     pathfinder=pathfinder,
-    imaging=imaging,
 )
-
-# folder = os.path.dirname(os.path.abspath(__file__))
-# config_path = os.path.join(folder, "env_config.yml")
-# env.save_config(config_path)
-
-
-# env = eve.Env.from_config_file(config_path)
 
 
 n_steps = 0
@@ -155,10 +143,10 @@ while True:
     obs, reward, terminal, truncation, info = env.step(action=action)
     env.render()
     n_steps += 1
-    print(simulation.tracking3d[0])
+    print(obs)
     if keys_pressed[pygame.K_RETURN]:
         env.reset()
         n_steps = 0
 
-    print(f"FPS: {1/(perf_counter()-start)}")
+    # print(f"FPS: {1/(perf_counter()-start)}")
 env.close()

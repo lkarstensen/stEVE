@@ -5,7 +5,7 @@ from typing import List, Tuple, Union
 import numpy as np
 from ...util import EveObject
 from .sofadevice import SOFADevice, NonProceduralShape
-from ...vesseltree.util.meshing import get_temp_mesh_path
+from ..vesseltree.util.meshing import get_temp_mesh_path
 
 
 class Device(EveObject, ABC):
@@ -13,6 +13,7 @@ class Device(EveObject, ABC):
     sofa_device: SOFADevice
     velocity_limit: Tuple[float, float]
     length: float
+    diameter: float
 
 
 def deg_to_rad(deg: float) -> float:

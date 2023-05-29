@@ -1,24 +1,25 @@
 import numpy as np
 
 from .observation import Observation, gym
-from ..target import Target as TargetClass
+from ..intervention import Intervention
 
 
 class Target2D(Observation):
     def __init__(
         self,
-        target: TargetClass,
-        name: str = "target",
+        intervention: Intervention,
+        name: str = "target2d",
     ) -> None:
-        super().__init__(name)
-        self.target = target
+        self.name = name
+        self.intervention = intervention
+        self.obs = None
 
     @property
     def space(self) -> gym.spaces.Box:
-        return self.target.coordinate_space2d
+        return self.intervention.fluoroscopy.tracking2d_space
 
     def step(self) -> None:
-        self.obs = np.array(self.target.coordinates2d, dtype=np.float32)
+        self.obs = np.array(self.intervention.target.coordinates2d, dtype=np.float32)
 
     def reset(self, episode_nr: int = 0) -> None:
         self.step()

@@ -2,12 +2,12 @@ from .observation import Observation, gym
 from math import sin, cos
 import numpy as np
 
-from ..intervention.intervention import Intervention
+from ..intervention import Intervention
 
 
 class Rotations(Observation):
     def __init__(self, intervention: Intervention, name: str = "rotation") -> None:
-        super().__init__(name)
+        self.name = name
         self.intervention = intervention
 
     @property

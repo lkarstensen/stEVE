@@ -6,9 +6,8 @@ from ..util import EveObject
 
 
 class Observation(EveObject, ABC):
-    def __init__(self, name: str) -> None:
-        self.name = name
-        self.obs: np.ndarray = None
+    name: str
+    obs: np.ndarray
 
     @property
     @abstractmethod

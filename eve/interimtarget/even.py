@@ -1,9 +1,8 @@
 import numpy as np
-import gymnasium as gym
 
-from .interimtarget import InterimTarget, Target
+from .interimtarget import InterimTarget
 from ..pathfinder import Pathfinder
-from ..intervention.intervention import Intervention
+from ..intervention import Intervention
 
 
 class Even(InterimTarget):
@@ -11,38 +10,32 @@ class Even(InterimTarget):
         self,
         pathfinder: Pathfinder,
         intervention: Intervention,
-        target: Target,
         resolution: float,
         threshold: float,
     ) -> None:
-        super().__init__(intervention, threshold)
+        self.intervention = intervention
+        self.threshold = threshold
         self.pathfinder = pathfinder
-        self.target = target
         self.resolution = resolution
 
-    @property
-    def coordinate_space2d(self) -> gym.spaces.Box:
-        return self.pathfinder.coordinate_space
-
     def step(self) -> None:
-        position = self.intervention.instrument_position_vessel_cs[0]
-        position_to_target = self.all_coordinates[0] - position
+        position = self.intervention.fluoroscopy.tracking3d[0]
+        position_to_target = self.all_coordinates3d[0] - position
         dist = np.linalg.norm(position_to_target)
         if dist < self.threshold:
             self.reached = True
-            if len(self.all_coordinates) > 1:
-                self.all_coordinates = self.all_coordinates[1:]
+            if len(self.all_coordinates3d) > 1:
+                self.all_coordinates3d = self.all_coordinates3d[1:]
         else:
             self.reached = False
-        self.coordinates2d = self.all_coordinates[0]
 
     def reset(self, episode_nr: int = 0) -> None:
-        self.all_coordinates = self._calc_interim_targets()
+        self.all_coordinates3d = self._calc_interim_targets()
 
     def _calc_interim_targets(self) -> np.ndarray:
-        path_points = self.pathfinder.path_points
+        path_points = self.pathfinder.path_points3d
         path_points = path_points[::-1]
-        interim_targets = [self.target.coordinates2d]
+        interim_targets = []
         acc_dist = 0.0
         for point, next_point in zip(path_points[:-1], path_points[1:]):
             length = np.linalg.norm(next_point - point)

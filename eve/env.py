@@ -4,20 +4,17 @@ from typing import Tuple, Dict, Any, Optional, TypeVar, Union
 import numpy as np
 import gymnasium as gym
 
-from .interimtarget import InterimTarget, InterimTargetDummy
-from .pathfinder import Pathfinder, PathfinderDummy
 from .intervention import Intervention
-from .target import Target
-from .start import Start, StartDummy
-from .visualisation import Visualisation, VisualisationDummy
-from .vesseltree import VesselTree, VesselTreeDummy
 from .observation import Observation, ObsDict, ObsTuple
 from .reward import Reward
 from .terminal import Terminal
 from .truncation import Truncation, TruncationDummy
 from .info import Info, InfoDummy
-from .imaging import Imaging, ImagingDummy
 from .util import EveObject, ConfigHandler
+from .visualisation import Visualisation, VisualisationDummy
+from .start import Start, InsertionPoint
+from .pathfinder import Pathfinder, PathfinderDummy
+from .interimtarget import InterimTarget, InterimTargetDummy
 
 ObsType = TypeVar(
     "ObsType",
@@ -31,33 +28,27 @@ RenderFrame = TypeVar("RenderFrame")
 class Env(gym.Env, EveObject):
     def __init__(
         self,
-        vessel_tree: VesselTree,
         intervention: Intervention,
-        target: Target,
-        start: Start,
         observation: Union[Observation, ObsDict, ObsTuple],
         reward: Reward,
         terminal: Terminal,
         truncation: Optional[Truncation],
         info: Optional[Info] = None,
-        imaging: Optional[Imaging] = None,
+        start: Optional[Start] = None,
         pathfinder: Optional[Pathfinder] = None,
         interim_target: Optional[InterimTarget] = None,
         visualisation: Optional[Visualisation] = None,
     ) -> None:
-        self.vessel_tree = vessel_tree
         self.intervention = intervention
-        self.target = target
-        self.start = start
         self.observation = observation
         self.reward = reward
         self.terminal = terminal
         self.truncation = truncation or TruncationDummy()
         self.info = info or InfoDummy()
-        self.imaging = imaging or ImagingDummy()
+        self.start = start or InsertionPoint(intervention)
+        self.visualisation = visualisation or VisualisationDummy()
         self.pathfinder = pathfinder or PathfinderDummy()
         self.interim_target = interim_target or InterimTargetDummy()
-        self.visualisation = visualisation or VisualisationDummy()
 
         self.episode_number = 0
 
@@ -72,11 +63,8 @@ class Env(gym.Env, EveObject):
     def step(
         self, action: np.ndarray
     ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
-        self.vessel_tree.step()
         self.intervention.step(action)
-        self.imaging.step()
         self.pathfinder.step()
-        self.target.step()
         self.interim_target.step()
         self.observation.step()
         self.reward.step()
@@ -98,15 +86,10 @@ class Env(gym.Env, EveObject):
         options: Optional[Dict[str, Any]] = None,
     ) -> Tuple[ObsType, Dict[str, Any]]:
         super().reset(seed=seed)
-        vessel_seed = None if seed is None else self._np_random.integers(0, 2**31)
-        self.vessel_tree.reset(self.episode_number, vessel_seed)
-        self.intervention.reset(self.episode_number)
+        self.intervention.reset(self.episode_number, seed, options)
         self.start.reset(self.episode_number)
-        target_seed = None if seed is None else self._np_random.integers(0, 2**31)
-        self.target.reset(self.episode_number, target_seed)
         self.pathfinder.reset(self.episode_number)
         self.interim_target.reset(self.episode_number)
-        self.imaging.reset(self.episode_number)
         self.observation.reset(self.episode_number)
         self.reward.reset(self.episode_number)
         self.terminal.reset(self.episode_number)
@@ -128,35 +111,26 @@ class EnvObsInfoOnly(Env):
     def __init__(  # pylint: disable=super-init-not-called
         self,
         intervention: Intervention,
-        target: Target,
         observation: Union[Observation, ObsDict, ObsTuple],
         info: Optional[Info] = None,
-        vessel_tree: Optional[VesselTree] = None,
         start: Optional[Start] = None,
-        imaging: Optional[Imaging] = None,
         pathfinder: Optional[Pathfinder] = None,
         interim_target: Optional[InterimTarget] = None,
         visualisation: Optional[Visualisation] = None,
     ) -> None:
         self.intervention = intervention
-        self.target = target
         self.observation = observation
         self.info = info or InfoDummy()
-        self.vessel_tree = vessel_tree or VesselTreeDummy()
-        self.start = start or StartDummy()
-        self.imaging = imaging or ImagingDummy()
+        self.start = start or InsertionPoint(intervention)
+        self.visualisation = visualisation or VisualisationDummy()
         self.pathfinder = pathfinder or PathfinderDummy()
-        self.interim_target = interim_target or InterimTargetDummy()
         self.visualisation = visualisation or VisualisationDummy()
 
         self.episode_number = 0
 
     def step(self, action: np.ndarray) -> Tuple[ObsType, Dict[str, Any]]:
-        self.vessel_tree.step()
         self.intervention.step(action)
-        self.imaging.step()
         self.pathfinder.step()
-        self.target.step()
         self.interim_target.step()
         self.observation.step()
         self.info.step()
@@ -171,16 +145,11 @@ class EnvObsInfoOnly(Env):
         seed: Optional[int] = None,
         options: Optional[Dict[str, Any]] = None,
     ) -> Tuple[ObsType, Dict[str, Any]]:
-        self._np_random = np.random.default_rng(seed=seed)
-        vessel_seed = None if seed is None else self._np_random.integers(0, 2**31)
-        self.vessel_tree.reset(self.episode_number, vessel_seed)
-        self.intervention.reset(self.episode_number)
+        super().reset(seed=seed)
+        self.intervention.reset(self.episode_number, seed, options)
         self.start.reset(self.episode_number)
-        target_seed = None if seed is None else self._np_random.integers(0, 2**31)
-        self.target.reset(self.episode_number, target_seed)
         self.pathfinder.reset(self.episode_number)
         self.interim_target.reset(self.episode_number)
-        self.imaging.reset(self.episode_number)
         self.observation.reset(self.episode_number)
         self.info.reset(self.episode_number)
         self.visualisation.reset(self.episode_number)

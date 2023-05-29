@@ -1,8 +1,8 @@
 from typing import List
 import numpy as np
 
-from . import Start
-from ..intervention.intervention import Intervention
+from .start import Start
+from ..intervention import Intervention
 
 
 class RandomAdvance(Start):
@@ -19,11 +19,11 @@ class RandomAdvance(Start):
         self.actin_high = np.array(action_high)
 
     def reset(self, episode_nr: int = 0) -> None:
-        self.intervention.reset_devices()
-        n_steps = int(self.t_advance * self.intervention.image_frequency)
+        self.intervention.simulation.reset_devices()
+        n_steps = int(self.t_advance * self.intervention.fluoroscopy.image_frequency)
 
         for _ in range(n_steps):
             action = np.random.uniform(self.action_low, self.actin_high)
-            self.intervention.step(action)
+            self.intervention.simulation.step(action)
         for _ in range(3):
-            self.intervention.step(np.zeros_like(action))
+            self.intervention.simulation.step(np.zeros_like(action))

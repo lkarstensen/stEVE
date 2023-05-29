@@ -6,43 +6,64 @@ import numpy as np
 import eve
 import eve.visualisation
 
-vessel_tree = eve.vesseltree.AorticArch()
+vessel_tree = eve.intervention.vesseltree.AorticArch()
 device = eve.intervention.device.JShaped(beams_per_mm_straight=0.5)
 device2 = eve.intervention.device.Simmons3Bends()
 
-simulation = eve.intervention.MonoPlaneStatic(
-    vessel_tree=vessel_tree, devices=[device, device2], lao_rao_deg=-5, cra_cau_deg=20
-)
-start = eve.start.MaxDeviceLength(simulation, 380)
-target = eve.target.CenterlineRandom(vessel_tree, simulation, threshold=10)
-pathfinder = eve.pathfinder.BruteForceBFS(vessel_tree, simulation, target)
+simulation = eve.intervention.simulation.Simulation()
 
-tracking = eve.observation.Tracking2D(simulation, n_points=5)
+fluoroscopy = eve.intervention.fluoroscopy.Fluoroscopy(
+    simulation=simulation,
+    vessel_tree=vessel_tree,
+    image_frequency=7.5,
+    image_rot_zx=[20, 5],
+)
+
+target = eve.intervention.target.CenterlineRandom(
+    vessel_tree=vessel_tree,
+    fluoroscopy=fluoroscopy,
+    threshold=5,
+    branches=["lcca", "rcca", "lsa", "rsa", "bct", "co"],
+)
+
+
+intervention = eve.intervention.MonoPlaneStatic(
+    vessel_tree=vessel_tree,
+    devices=[device, device2],
+    simulation=simulation,
+    fluoroscopy=fluoroscopy,
+    target=target,
+)
+
+
+start = eve.start.MaxDeviceLength(intervention=intervention, max_length=500)
+pathfinder = eve.pathfinder.BruteForceBFS(intervention=intervention)
+
+
+tracking = eve.observation.Tracking2D(intervention, n_points=5)
 tracking = eve.observation.wrapper.RelativeToFirstRow(tracking)
 
-target_state = eve.observation.Target2D(target)
+target_state = eve.observation.Target2D(intervention)
 
-rotation = eve.observation.Rotations(simulation)
+rotation = eve.observation.Rotations(intervention)
 state = eve.observation.ObsDict(
     {"tracking": tracking, "target": target_state, "rotation": rotation}
 )
 
-target_reward = eve.reward.TargetReached(target, factor=1.0)
+target_reward = eve.reward.TargetReached(intervention, factor=1.0)
 # step_reward = eve.reward.Step(factor=-0.01)
 path_delta = eve.reward.PathLengthDelta(pathfinder, 0.01)
 reward = eve.reward.Combination([target_reward, path_delta])
 
-target_reached = eve.terminal.TargetReached(target=target)
+target_reached = eve.terminal.TargetReached(intervention=intervention)
 max_steps = eve.truncation.MaxSteps(200)
 
-visualisation = eve.visualisation.SofaPygame(simulation)
+visualisation = eve.visualisation.SofaPygame(intervention)
 
 
 env = eve.Env(
-    vessel_tree=vessel_tree,
-    intervention=simulation,
+    intervention=intervention,
     start=start,
-    target=target,
     observation=state,
     reward=reward,
     terminal=target_reached,

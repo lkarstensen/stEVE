@@ -1,6 +1,6 @@
 import numpy as np
 from .start import Start
-from ..intervention.intervention import Intervention
+from ..intervention import Intervention
 
 
 class MaxDeviceLength(Start):
@@ -10,4 +10,4 @@ class MaxDeviceLength(Start):
 
     def reset(self, episode_nr: int = 0) -> None:
         if np.any(self.intervention.device_lengths_inserted > self.max_length):
-            self.intervention.reset_devices()
+            self.intervention.simulation.reset_devices()

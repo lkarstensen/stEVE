@@ -1,5 +1,5 @@
 from .start import Start
-from ..intervention.intervention import Intervention
+from ..intervention import Intervention
 
 
 class InsertionPoint(Start):
@@ -7,4 +7,4 @@ class InsertionPoint(Start):
         self.intervention = intervention
 
     def reset(self, episode_nr: int = 0) -> None:
-        self.intervention.reset_devices()
+        self.intervention.simulation.reset_devices()

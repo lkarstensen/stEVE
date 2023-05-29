@@ -1,13 +1,14 @@
 import numpy as np
 
 from .observation import Observation, gym
-from ..intervention.intervention import Intervention
+from ..intervention import Intervention
 
 
 class LastAction(Observation):
     def __init__(self, intervention: Intervention, name: str = "last_action") -> None:
-        super().__init__(name)
+        self.name = name
         self.intervention = intervention
+        self.obs = None
 
     @property
     def space(self) -> gym.spaces.Box:

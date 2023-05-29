@@ -1,6 +1,6 @@
 import numpy as np
 
-from .pathfinder import Pathfinder, gym
+from .pathfinder import Pathfinder
 
 
 class Dummy(Pathfinder):
@@ -18,12 +18,6 @@ class Dummy(Pathfinder):
     @property
     def path_branching_points(self):  # -> List[BranchingPoint]:
         return []
-
-    @property
-    def coordinate_space(self) -> gym.spaces.Box:
-        low = np.zeros((3,), dtype=np.float32)
-        high = low
-        return gym.spaces.Box(low=low, high=high, dtype=np.float32)
 
     def step(self) -> None:
         pass

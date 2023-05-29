@@ -8,7 +8,7 @@ class SimError(Truncation):
 
     @property
     def truncated(self) -> bool:
-        return self.intervention.simulation_error
+        return self.intervention.simulation.simulation_error
 
     def step(self) -> None:
         ...

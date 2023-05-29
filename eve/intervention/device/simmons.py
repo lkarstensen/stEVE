@@ -21,6 +21,10 @@ class Simmons4Bends(MeshDevice):
     beams_per_mm_straight: float = 0.09
     color: Tuple[float, float, float] = (30, 144, 255)
 
+    @property
+    def length(self) -> float:
+        return self.sofa_device.length
+
     def __post_init__(self):
         elements = []
         elements.append(

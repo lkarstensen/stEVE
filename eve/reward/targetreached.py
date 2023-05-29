@@ -1,14 +1,14 @@
 from .reward import Reward
-from ..target import Target
+from ..intervention import Intervention
 
 
 class TargetReached(Reward):
-    def __init__(self, target: Target, factor: float) -> None:
-        self.target = target
+    def __init__(self, intervention: Intervention, factor: float) -> None:
+        self.intervention = intervention
         self.factor = factor
 
     def step(self) -> None:
-        self.reward = self.factor * self.target.reached
+        self.reward = self.factor * self.intervention.target.reached
 
     def reset(self, episode_nr: int = 0) -> None:
         self.reward = 0.0

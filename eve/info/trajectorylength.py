@@ -12,18 +12,18 @@ class TrajectoryLength(Info):
         super().__init__(name)
         self.intervention = intervention
         self.trajectory_length = 0.0
-        self.last_tip_pos = self.intervention.instrument_position_vessel_cs[0]
+        self.last_tip_pos = self.intervention.fluoroscopy.tracking3d[0]
 
     @property
     def info(self) -> Dict[str, Any]:
         return {self.name: self.trajectory_length}
 
     def step(self) -> None:
-        pos = self.intervention.instrument_position_vessel_cs[0]
+        pos = self.intervention.fluoroscopy.tracking3d[0]
         dist = np.linalg.norm(pos - self.last_tip_pos)
         self.trajectory_length += dist
         self.last_tip_pos = pos
 
     def reset(self, episode_nr: int = 0) -> None:
         self.trajectory_length = 0.0
-        self.last_tip_pos = self.intervention.instrument_position_vessel_cs[0]
+        self.last_tip_pos = self.intervention.fluoroscopy.tracking3d[0]

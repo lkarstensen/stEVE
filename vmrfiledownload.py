@@ -1,5 +1,5 @@
 import logging
-from eve.vesseltree.util.vmrdownload import download_vmr_files
+from eve.intervention.vesseltree.util.vmrdownload import download_vmr_files
 
 
 logging.basicConfig(level=logging.INFO)

@@ -15,10 +15,12 @@ class NormalizeTracking2DEpisode(Normalize):
     ) -> None:
         super().__init__(wrapped_obs, name)
         self.intervention = intervention
-        self._normalization_space = intervention.tracking2d_space_episode
+        self._normalization_space = None
 
     def reset(self, episode_nr: int = 0) -> None:
-        self._normalization_space = self.intervention.tracking2d_space_episode
+        self._normalization_space = (
+            self.intervention.fluoroscopy.tracking2d_space_episode
+        )
         return super().reset(episode_nr)
 
     def _normalize(self, obs: np.ndarray) -> np.ndarray:

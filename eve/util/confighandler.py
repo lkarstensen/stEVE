@@ -141,10 +141,7 @@ class ConfigHandler:
 
         if isinstance(eve_object, self._eve.Env):
             init_attributes = [
-                "vessel_tree",
                 "intervention",
-                "imaging",
-                "target",
                 "interim_target",
                 "start",
                 "pathfinder",
@@ -153,7 +150,6 @@ class ConfigHandler:
                 "terminal",
                 "truncation",
                 "info",
-                "visualisation",
             ]
         else:
             init_attributes = self._get_init_attributes(eve_object.__init__)
