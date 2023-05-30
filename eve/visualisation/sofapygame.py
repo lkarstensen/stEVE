@@ -109,6 +109,10 @@ class SofaPygame(Visualisation):
         )
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
+        if self.initial_orientation is not None:
+            self._theta_x = 0.0
+            self._theta_z = 0.0
+            self.rotate(0, 0)
         self.initial_orientation = np.array(
             [
                 camera.orientation[3],
