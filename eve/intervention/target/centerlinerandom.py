@@ -4,6 +4,7 @@ import numpy as np
 
 from .target import Target
 from ..vesseltree import VesselTree
+from ..vesseltree.util.branch import BranchWithRadii
 from ..fluoroscopy import Fluoroscopy
 
 
@@ -72,5 +73,6 @@ class CenterlineRandom(Target):
         in_branch = [False] * coordinates.shape[0]
         for branch_name in excluded_branches:
             branch = self.vessel_tree[branch_name]
-            in_branch = branch.in_branch(coordinates) + in_branch
+            if isinstance(branch, BranchWithRadii):
+                in_branch = branch.in_branch(coordinates) + in_branch
         return in_branch
