@@ -7,8 +7,6 @@ class Combination(Info):
         super().__init__("info_combination")
         self.infos = infos
 
-        self.step()
-
     @property
     def info(self) -> Dict[str, Any]:
         ret_info = {}

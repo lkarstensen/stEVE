@@ -12,7 +12,7 @@ class TrajectoryLength(Info):
         super().__init__(name)
         self.intervention = intervention
         self.trajectory_length = 0.0
-        self.last_tip_pos = self.intervention.fluoroscopy.tracking3d[0]
+        self.last_tip_pos = None
 
     @property
     def info(self) -> Dict[str, Any]:
