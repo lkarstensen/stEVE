@@ -32,7 +32,7 @@ class EveObject(ABC):
         module = import_module(module_path)
         new_obj_constructor = getattr(module, class_name)
 
-        if cls != new_obj_constructor:
+        if not issubclass(new_obj_constructor, cls):
             raise ValueError("Config File from wrong class")
         confighandler = ConfigHandler()
 
