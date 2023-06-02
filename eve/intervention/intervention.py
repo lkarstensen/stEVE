@@ -8,6 +8,7 @@ from ..util import EveObject
 from .target import Target
 from .vesseltree import VesselTree
 from .fluoroscopy import Fluoroscopy
+from .simulation import Simulation, SimulationMP
 from .device import Device
 
 
@@ -15,6 +16,7 @@ class Intervention(EveObject, ABC):
     vessel_tree: VesselTree
     devices: List[Device]
     fluoroscopy: Fluoroscopy
+    simulation: Simulation
     target: Target
     stop_device_at_tree_end: bool = True
 
@@ -63,3 +65,15 @@ class Intervention(EveObject, ABC):
     @abstractmethod
     def reset_devices(self) -> None:
         ...
+
+    def make_mp(self, step_timeout: float = 2, restart_n_resets: int = 200):
+        if isinstance(self.simulation, Simulation):
+            new_sim = SimulationMP(self.simulation, step_timeout, restart_n_resets)
+            self.fluoroscopy.simulation = new_sim
+            self.simulation = new_sim
+
+    def make_non_mp(self):
+        if isinstance(self.simulation, SimulationMP):
+            new_sim = self.simulation.simulation
+            self.fluoroscopy.simulation = new_sim
+            self.simulation = new_sim
