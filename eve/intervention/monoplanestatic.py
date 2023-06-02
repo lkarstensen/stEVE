@@ -109,4 +109,4 @@ class MonoPlaneStatic(Intervention):
         self.simulation.close()
 
     def reset_devices(self) -> None:
-        self.simulation.reset_sofa_devices()
+        self.simulation.reset_devices()
