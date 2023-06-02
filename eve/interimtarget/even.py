@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 
 from .interimtarget import InterimTarget
@@ -17,19 +18,19 @@ class Even(InterimTarget):
         self.threshold = threshold
         self.pathfinder = pathfinder
         self.resolution = resolution
+        # self.all_coordinates3d = []
 
     def step(self) -> None:
+        self.reached = False
         position = self.intervention.fluoroscopy.tracking3d[0]
-        position_to_target = self.all_coordinates3d[0] - position
-        dist = np.linalg.norm(position_to_target)
-        if dist < self.threshold:
-            self.reached = True
-            if len(self.all_coordinates3d) > 1:
-                self.all_coordinates3d = self.all_coordinates3d[1:]
-        else:
-            self.reached = False
+        if self.coordinates3d is not None:
+            position_to_target = self.coordinates3d - position
+            dist = np.linalg.norm(position_to_target)
+            if dist < self.threshold:
+                self.reached = True
+                self.all_coordinates3d.pop(0)
 
-    def reset(self, episode_nr: int = 0) -> None:
+    def reset(self, episode_nr: int = 0, seed: Optional[int] = None) -> None:
         self.all_coordinates3d = self._calc_interim_targets()
 
     def _calc_interim_targets(self) -> np.ndarray:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Optional
 import numpy as np
 
 from ..util import EveObject
@@ -11,8 +11,7 @@ from ..intervention import Intervention
 class InterimTarget(EveObject, ABC):
     # Needs to be set by implementing classes in step() or reset().
     # Coordinates are in the tracking coordinate space
-    all_coordinates3d: np.ndarray
-    coordinates3d: np.ndarray
+    all_coordinates3d: List[np.ndarray]
     reached: bool
     threshold: float
     intervention: Intervention
@@ -23,10 +22,14 @@ class InterimTarget(EveObject, ABC):
 
     @property
     def coordinates2d(self) -> np.ndarray:
+        if self.coordinates3d is None:
+            return None
         return self.intervention.fluoroscopy.tracking3d_to_2d(self.coordinates3d)
 
     @property
-    def all_coordinates2d(self) -> np.ndarray:
+    def all_coordinates2d(self) -> List[np.ndarray]:
+        if not self.all_coordinates3d:
+            return []
         return self.intervention.fluoroscopy.tracking3d_to_2d(self.all_coordinates3d)
 
     @abstractmethod
