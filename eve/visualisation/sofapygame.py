@@ -1,24 +1,28 @@
 from math import cos, sin
-from typing import Tuple
+from typing import Optional, Tuple
 import importlib
 import numpy as np
 
 from .visualisation import Visualisation
 from ..intervention import Intervention
+from ..interimtarget import InterimTarget, InterimTargetDummy
 
 
 class SofaPygame(Visualisation):
     def __init__(
         self,
         intervention: Intervention,
-        display_size: Tuple[float, float] = (1200, 860),
+        interim_target: Optional[InterimTarget] = None,
+        display_size: Tuple[float, float] = (600, 860),
     ) -> None:
         self.intervention = intervention
+        self.interim_target = interim_target or InterimTargetDummy()
         self.display_size = display_size
         simulation = self.intervention.simulation
         simulation.init_visual_nodes = True
         simulation.display_size = display_size
         simulation.target_size = self.intervention.target.threshold
+        simulation.interim_target_size = self.interim_target.threshold
 
         self.initial_orientation = None
         self._initialized = False
@@ -33,8 +37,14 @@ class SofaPygame(Visualisation):
         self._opengl_glu = None
         self._pygame = None
 
+        self.interim_targets = []
+
     def render(self) -> None:
         simulation = self.intervention.simulation
+        if self.interim_target.reached:
+            it_to_remove = self.interim_targets.pop(0)
+            simulation.remove_interim_target(it_to_remove)
+
         self._sofa.Simulation.updateVisual(simulation.root)
         gl = self._opengl_gl
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -140,6 +150,13 @@ class SofaPygame(Visualisation):
             target[2],
         ]
         self._sofa.Simulation.init(simulation.target_node)
+
+        interim_targets_vcs = fluoroscopy.tracking3d_to_vessel_cs(
+            self.interim_target.all_coordinates3d
+        )
+        self.interim_targets = self.intervention.simulation.add_interim_targets(
+            list(interim_targets_vcs)
+        )
 
     def close(self):
         self._pygame.quit()  # pylint: disable=no-member
