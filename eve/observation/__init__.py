@@ -8,6 +8,7 @@ from .target2d import Target2D
 from .target3d import Target3D
 from .tracking2d import Tracking2D
 from .tracking3d import Tracking3D
+from .trackingdevice2d import TrackingDevice2D
 from .insertionlengths import InsertionLengths
 from .insertionlengthrelative import InsertionLengthRelative
 from .image import Image
