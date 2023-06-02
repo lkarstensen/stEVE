@@ -54,7 +54,9 @@ class BruteForceBFS(Pathfinder):
             path_branching_points,
             self.path_length,
             path_points,
-        ) = self._get_shortest_path(position_branch, target_branch, position, target)
+        ) = self._get_shortest_path(
+            position_branch, target_branch, position_vessel_cs, target_vessel_cs
+        )
         if path_branching_points is not None:
             path_branching_points = [
                 branching_point.coordinates for branching_point in path_branching_points
@@ -139,7 +141,7 @@ class BruteForceBFS(Pathfinder):
                 connection = self._node_connections[node][next_node]
                 shortest_path_length += connection.length
                 shortest_path_points = np.vstack(
-                    (shortest_path_points, connection.points)
+                    (shortest_path_points, connection.points[1:])
                 )
 
             target_points = target_branch.get_path_along_branch(
@@ -147,11 +149,9 @@ class BruteForceBFS(Pathfinder):
             )
 
             target_length = get_length(target_points)
-            shortest_path_points = np.vstack((shortest_path_points, target_points))
+            shortest_path_points = np.vstack((shortest_path_points, target_points[1:]))
             shortest_path_length += target_length
             shortest_path = path[1:-1]
-
-        shortest_path_points = np.unique(shortest_path_points, axis=0)
 
         return shortest_path, shortest_path_length, shortest_path_points
 
