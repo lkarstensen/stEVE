@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import logging
 import queue
 import multiprocessing as mp
@@ -8,12 +8,12 @@ from .simulation import Simulation
 
 
 def run(
-    dt_simulation,
-    task_queue,
-    results_queue,
+    simu_dict: Dict,
+    task_queue: queue.Queue,
+    results_queue: queue.Queue,
     shutdown_event,
 ):
-    sofacore = Simulation(dt_simulation)
+    simulation = Simulation.from_config_dict(simu_dict)
     while not shutdown_event.is_set():
         try:
             task = task_queue.get(timeout=0.1)
@@ -22,7 +22,7 @@ def run(
         task_name = task[0]
         args = task[1]
         kwargs = task[2]
-        attribute = getattr(sofacore, task_name)
+        attribute = getattr(simulation, task_name)
         if callable(attribute):
             results = attribute(*args, **kwargs)
         else:
@@ -30,7 +30,7 @@ def run(
 
         results_queue.put(results)
 
-    sofacore.close()
+    simulation.close()
     while True:
         try:
             results_queue.get(timeout=0.1)
@@ -49,13 +49,13 @@ class SimulationMP(Simulation):
     # pylint: disable=super-init-not-called
     def __init__(
         self,
-        dt_simulation: float = 0.006,
+        simulation: Simulation,
         step_timeout: float = 2,
         restart_n_resets: int = 200,
     ) -> None:
         self.logger = logging.getLogger(self.__module__)
 
-        self.dt_simulation = dt_simulation
+        self.simulation = simulation
         self.step_timeout = step_timeout
         self.restart_n_resets = restart_n_resets
 
@@ -116,12 +116,12 @@ class SimulationMP(Simulation):
 
     def do_steps(self, action: np.ndarray, duration):
         if self._task_queue is not None:
-            self._task_queue.put(["do_sofa_steps", [action, duration], {}])
+            self._task_queue.put(["do_steps", [action, duration], {}])
             self._get_result(timeout=self.step_timeout)
 
-    def reset_sofa_devices(self):
+    def reset_devices(self):
         if self._task_queue is not None:
-            self._task_queue.put(["reset_sofa_devices", [], {}])
+            self._task_queue.put(["reset_devices", [], {}])
             self._get_result(timeout=self.step_timeout)
 
     def reset(
@@ -170,7 +170,14 @@ class SimulationMP(Simulation):
             self._mesh_path = mesh_path
         self._reset_count += 1
 
+    def add_interim_targets(self, positions: List[Tuple[float, float, float]]):
+        raise RuntimeError("This Class can't be used with visualization stuff")
+
+    def remove_interim_target(self, interim_target):
+        raise RuntimeError("This Class can't be used with visualization stuff")
+
     def _new_sofa_process(self):
+        simu_dict = self.simulation.get_config_dict()
         self.logger.debug("Starting new sofa process")
         self._shutdown_event = mp.Event()
         self._task_queue = mp.Queue()
@@ -178,7 +185,7 @@ class SimulationMP(Simulation):
         self._sofa_process = mp.Process(
             target=run,
             args=[
-                self.dt_simulation,
+                simu_dict,
                 self._task_queue,
                 self._result_queue,
                 self._shutdown_event,
