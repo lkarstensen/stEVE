@@ -5,8 +5,6 @@ import numpy as np
 from ..util import EveObject
 from ..intervention import Intervention
 
-# TODO: Rework InterimTargets
-
 
 class InterimTarget(EveObject, ABC):
     # Needs to be set by implementing classes in step() or reset().
