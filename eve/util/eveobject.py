@@ -9,13 +9,13 @@ class EveObject(ABC):
     def __repr__(self):
         return f"{self.__module__}.{self.__class__.__name__}"
 
-    def save_config(self, file_path: str):
+    def save_config(self, file_path: str, eve_classes_only: bool = True):
         confighandler = ConfigHandler()
-        confighandler.save_config(self, file_path)
+        confighandler.save_config(self, file_path, eve_classes_only)
 
-    def get_config_dict(self):
+    def get_config_dict(self, eve_classes_only: bool = True):
         confighandler = ConfigHandler()
-        return confighandler.object_to_config_dict(self)
+        return confighandler.object_to_config_dict(self, eve_classes_only)
 
     @classmethod
     def from_config_file(cls, config_file: str, to_exchange: Optional[Dict] = None):
