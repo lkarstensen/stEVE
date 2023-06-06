@@ -132,7 +132,7 @@ class SofaBeamAdapter(Simulation):
             or vessel_visual_path != self._vessel_visual_path
             or np.any(coords_high != self._coords_high)
             or np.any(coords_low != self._coords_low)
-            or self.init_visual_nodes
+            # or self.init_visual_nodes
         ):
             if self.root is None:
                 self.root = self._sofa.Core.Node()
