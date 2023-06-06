@@ -20,12 +20,14 @@ class MonoPlaneStatic(Intervention):
         fluoroscopy: Fluoroscopy,
         target: Target,
         stop_device_at_tree_end: bool = True,
+        normalize_action: bool = False,
     ) -> None:
         self.vessel_tree = vessel_tree
         self.devices = devices
         self.target = target
         self.fluoroscopy = fluoroscopy
         self.stop_device_at_tree_end = stop_device_at_tree_end
+        self.normlaize_action = normalize_action
         self.simulation = simulation
         self._np_random = np.random.default_rng()
 
@@ -52,12 +54,24 @@ class MonoPlaneStatic(Intervention):
 
     @property
     def action_space(self) -> gym.spaces.Box:
-        return gym.spaces.Box(low=-self.velocity_limits, high=self.velocity_limits)
+        if self.normalize_action:
+            high = np.ones_like(self.velocity_limits)
+            space = gym.spaces.Box(low=-high, high=high)
+        else:
+            space = gym.spaces.Box(low=-self.velocity_limits, high=self.velocity_limits)
+        return space
 
     def step(self, action: np.ndarray) -> None:
         action = np.array(action).reshape(self.velocity_limits.shape)
-        action = np.clip(action, -self.velocity_limits, self.velocity_limits)
-        self.last_action = action
+        if self.normalize_action:
+            action = np.clip(action, -1.0, 1.0)
+            self.last_action = action
+            high = self.velocity_limits
+            low = -high
+            action = (action + 1) / 2 * (high - low) + low
+        else:
+            action = np.clip(action, -self.velocity_limits, self.velocity_limits)
+            self.last_action = action
 
         inserted_lengths = np.array(self.device_lengths_inserted)
         max_lengths = np.array(self.device_lengths_maximum)

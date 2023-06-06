@@ -19,6 +19,7 @@ class Intervention(EveObject, ABC):
     simulation: Simulation
     target: Target
     stop_device_at_tree_end: bool = True
+    normalize_action: bool = False
 
     @property
     @abstractmethod
