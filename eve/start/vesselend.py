@@ -7,6 +7,7 @@ class VesselEnd(Start):
         self.intervention = intervention
 
     def reset(self, episode_nr: int = 0) -> None:
-        tip = self.intervention.simulation.instrument_position_vessel_cs[0]
-        if self.intervention.vessel_tree.at_tree_end(tip):
+        tip = self.intervention.fluoroscopy.tracking3d[0]
+        tip_vessel_cs = self.intervention.fluoroscopy.tracking3d_to_vessel_cs(tip)
+        if self.intervention.vessel_tree.at_tree_end(tip_vessel_cs):
             self.intervention.simulation.reset_devices()
