@@ -1,6 +1,6 @@
 from copy import deepcopy
 from importlib import import_module
-from typing import Tuple, Dict, Any, Optional, TypeVar, Union
+from typing import List, Tuple, Dict, Any, Optional, TypeVar, Union
 import numpy as np
 import gymnasium as gym
 
@@ -19,7 +19,7 @@ from .interimtarget import InterimTarget, InterimTargetDummy
 ObsType = TypeVar(
     "ObsType",
     np.ndarray,
-    Tuple[Union[np.ndarray, Dict[str, np.ndarray]]],
+    List[np.ndarray],
     Dict[str, np.ndarray],
 )
 RenderFrame = TypeVar("RenderFrame")
@@ -124,7 +124,7 @@ class EnvObsInfoOnly(Env):
         self.start = start or InsertionPoint(intervention)
         self.visualisation = visualisation or VisualisationDummy()
         self.pathfinder = pathfinder or PathfinderDummy()
-        self.visualisation = visualisation or VisualisationDummy()
+        self.interim_target = interim_target or InterimTargetDummy()
 
         self.episode_number = 0
 
