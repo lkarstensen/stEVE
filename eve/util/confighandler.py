@@ -14,13 +14,17 @@ class ConfigHandler:
         self.object_registry = {}
         self._eve = import_module("eve")
 
-    def save_config(self, eve_object: Any, file: str) -> None:
-        obj_dict = self.object_to_config_dict(eve_object)
+    def save_config(
+        self, eve_object: Any, file: str, eve_classes_only: bool = True
+    ) -> None:
+        obj_dict = self.object_to_config_dict(eve_object, eve_classes_only)
         self.save_config_dict(obj_dict, file)
 
-    def object_to_config_dict(self, eve_object: Any) -> dict:
+    def object_to_config_dict(
+        self, eve_object: Any, eve_classes_only: bool = True
+    ) -> dict:
         self.object_registry = {}
-        config_dict = self._eve_obj_to_dict(eve_object)
+        config_dict = self._eve_obj_to_dict(eve_object, eve_classes_only)
         self.object_registry = {}
         return config_dict
 
@@ -129,29 +133,18 @@ class ConfigHandler:
                     )
         return object_list, obj_id
 
-    def _eve_obj_to_dict(self, eve_object) -> dict:
+    def _eve_obj_to_dict(self, eve_object, eve_classes_only: bool) -> dict:
         attributes_dict = {}
-        attributes_dict[
-            "_class"
-        ] = f"{eve_object.__module__}.{eve_object.__class__.__name__}"
-        object_id = id(eve_object)
-        attributes_dict["_id"] = object_id
-        if object_id in self.object_registry:
-            return attributes_dict
 
-        if isinstance(eve_object, self._eve.Env):
-            init_attributes = [
-                "intervention",
-                "interim_target",
-                "start",
-                "pathfinder",
-                "observation",
-                "reward",
-                "terminal",
-                "truncation",
-                "info",
-            ]
+        if eve_classes_only and not eve_object.__module__.startswith("eve."):
+            parent = eve_object.__class__.__base__
+            while not parent.__module__.startswith("eve."):
+                parent = parent.__class__.__base__
+            class_str = str(parent)[8:-2]
+            init_attributes = self._get_init_attributes(parent.__init__)
+
         else:
+            class_str = f"{eve_object.__module__}.{eve_object.__class__.__name__}"
             init_attributes = self._get_init_attributes(eve_object.__init__)
 
         if "args" in init_attributes:
@@ -160,15 +153,26 @@ class ConfigHandler:
             init_attributes.remove("kwargs")
         if "kwds" in init_attributes:
             init_attributes.remove("kwds")
+        if "self" in init_attributes:
+            init_attributes.remove("self")
+
+        attributes_dict["_class"] = class_str
+        object_id = id(eve_object)
+        attributes_dict["_id"] = object_id
+        if object_id in self.object_registry:
+            return attributes_dict
 
         for attribute in init_attributes:
             nested_object = getattr(eve_object, attribute)
-            attributes_dict[attribute] = self._obj_to_native_datatypes(nested_object)
+            attributes_dict[attribute] = self._obj_to_native_datatypes(
+                nested_object, eve_classes_only
+            )
 
         self.object_registry[object_id] = eve_object
         return attributes_dict
 
-    def _obj_to_native_datatypes(self, obj) -> Any:
+    def _obj_to_native_datatypes(self, obj, eve_classes_only) -> Any:
+        eco = eve_classes_only
         if isinstance(obj, np.integer):
             return int(obj)
 
@@ -179,17 +183,17 @@ class ConfigHandler:
             return obj.tolist()
 
         elif isinstance(obj, list):
-            return [self._obj_to_native_datatypes(v) for v in obj]
+            return [self._obj_to_native_datatypes(v, eco) for v in obj]
 
         if isinstance(obj, tuple):
-            return tuple(self._obj_to_native_datatypes(v) for v in obj)
+            return tuple(self._obj_to_native_datatypes(v, eco) for v in obj)
 
         if isinstance(obj, dict):
-            return {k: self._obj_to_native_datatypes(v) for k, v in obj.items()}
+            return {k: self._obj_to_native_datatypes(v, eco) for k, v in obj.items()}
 
         eve = importlib.import_module("eve")
         if isinstance(obj, eve.util.EveObject):
-            return self._eve_obj_to_dict(obj)
+            return self._eve_obj_to_dict(obj, eco)
 
         if hasattr(obj, "__module__"):
             raise NotImplementedError(
@@ -218,6 +222,8 @@ class ConfigHandler:
             obj_kwds[attribute_name] = self._config_dict_value_converter(value)
 
         constructor = self._get_class_constructor(class_str)
+        if issubclass(constructor, self._eve.Env):
+            constructor = self._eve.Env
         obj = constructor(**obj_kwds)
         self.object_registry[obj_id] = obj
         return obj
