@@ -10,7 +10,6 @@ from . import VesselTree, AorticArch, ArchType
 class AorticArchRandom(VesselTree):
     def __init__(
         self,
-        seed_random: Optional[int] = None,
         scale_width_array: Optional[List[float]] = None,
         scale_heigth_array: Optional[List[float]] = None,
         scale_diameter_array: Optional[List[float]] = None,
@@ -23,7 +22,6 @@ class AorticArchRandom(VesselTree):
         n_coordinate_space_iters: int = 5,
         episodes_between_change: int = 1,
     ) -> None:
-        self.seed_random = seed_random
         self.scale_width_array = scale_width_array or np.linspace(
             0.7, 1.3, 61, endpoint=True
         )
@@ -49,7 +47,7 @@ class AorticArchRandom(VesselTree):
         else:
             self._arch_types = all_archtypes
 
-        self._rng = random.Random(seed_random)
+        self._rng = random.Random()
         self._aortic_arch: AorticArch = self._randomize_vessel()
         self.coordinate_space = self._calc_coordinate_space(
             self.n_coordinate_space_iters
@@ -83,8 +81,6 @@ class AorticArchRandom(VesselTree):
     def reset(self, episode_nr=0, seed: int = None) -> None:
         if seed is not None:
             self._rng = random.Random(seed)
-        elif self.seed_random is None:
-            self._rng = random.Random(self.seed_random)
         if episode_nr % self.episodes_between_change == 0:
             self._aortic_arch = self._randomize_vessel()
         self._aortic_arch.reset(episode_nr, seed)
