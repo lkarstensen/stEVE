@@ -6,6 +6,7 @@ import numpy as np
 from .intervention import Intervention
 from .target import Target
 from .vesseltree import VesselTree
+from .vesseltree.vesseltree import at_tree_end
 from .fluoroscopy import Fluoroscopy
 from .device import Device
 from .simulation import Simulation
@@ -35,6 +36,8 @@ class MonoPlaneStatic(Intervention):
             [device.velocity_limit for device in self.devices]
         )
         self.last_action = np.zeros_like(self.velocity_limits)
+        self._device_lengths_inserted = self.simulation.inserted_lengths
+        self._device_rotations = self.simulation.rotations
 
     @property
     def device_lengths_inserted(self) -> List[float]:
@@ -81,7 +84,7 @@ class MonoPlaneStatic(Intervention):
         mask = np.where(inserted_lengths + action[:, 0] * duration >= max_lengths)
         action[mask, 0] = 0.0
         tip = self.simulation.dof_positions[0]
-        if self.stop_device_at_tree_end and self.vessel_tree.at_tree_end(tip):
+        if self.stop_device_at_tree_end and at_tree_end(tip, self.vessel_tree):
             max_length = max(inserted_lengths)
             if max_length > 10:
                 dist_to_longest = -1 * inserted_lengths + max_length
@@ -90,7 +93,7 @@ class MonoPlaneStatic(Intervention):
                 action[mask, 0] = 0.0
 
         self.vessel_tree.step()
-        self.simulation.do_steps(action, duration)
+        self.simulation.step(action, duration)
         self.fluoroscopy.step()
         self.target.step()
 
@@ -118,6 +121,11 @@ class MonoPlaneStatic(Intervention):
         target_seed = None if seed is None else self._np_random.integers(0, 2**31)
         self.target.reset(episode_number, target_seed)
         self.fluoroscopy.reset(episode_number)
+        self.last_action *= 0.0
+
+    def _update_states(self):
+        self._device_lengths_inserted = self.simulation.inserted_lengths
+        self._device_rotations = self.simulation.rotations
 
     def close(self) -> None:
         self.simulation.close()

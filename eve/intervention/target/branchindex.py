@@ -1,6 +1,7 @@
 from .target import Target
 from ..vesseltree import VesselTree
 from ..fluoroscopy import Fluoroscopy
+from ...util.coordtransform import vessel_cs_to_tracking3d
 
 
 class BranchIndex(Target):
@@ -23,5 +24,10 @@ class BranchIndex(Target):
 
     def reset(self, episode_nr=0, seed=None) -> None:
         target_vessel_cs = self.vessel_tree[self.branch].coordinates[self.idx]
-        self.coordinates3d = self.fluoroscopy.vessel_cs_to_tracking3d(target_vessel_cs)
+        self.coordinates3d = vessel_cs_to_tracking3d(
+            target_vessel_cs,
+            self.fluoroscopy.image_rot_zx,
+            self.fluoroscopy.image_center,
+            self.fluoroscopy.field_of_view,
+        )
         self.reached = False

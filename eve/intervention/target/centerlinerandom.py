@@ -6,6 +6,7 @@ from .target import Target
 from ..vesseltree import VesselTree
 from ..vesseltree.util.branch import BranchWithRadii
 from ..fluoroscopy import Fluoroscopy
+from ...util.coordtransform import vessel_cs_to_tracking3d
 
 
 class CenterlineRandom(Target):
@@ -47,7 +48,12 @@ class CenterlineRandom(Target):
             self._init_centerline_point_cloud()
             self._branches_initialized = self.vessel_tree.branches
         target_vessel_cs = self._rng.choice(self._potential_targets)
-        self.coordinates3d = self.fluoroscopy.vessel_cs_to_tracking3d(target_vessel_cs)
+        self.coordinates3d = vessel_cs_to_tracking3d(
+            target_vessel_cs,
+            self.fluoroscopy.image_rot_zx,
+            self.fluoroscopy.image_center,
+            self.fluoroscopy.field_of_view,
+        )
         self.reached = False
 
     def _init_centerline_point_cloud(self):

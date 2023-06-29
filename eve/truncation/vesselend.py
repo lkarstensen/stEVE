@@ -1,5 +1,7 @@
 from .truncation import Truncation
 from ..intervention import Intervention
+from ..intervention.vesseltree.vesseltree import at_tree_end
+from ..util.coordtransform import tracking3d_to_vessel_cs
 
 
 class VesselEnd(Truncation):
@@ -8,8 +10,13 @@ class VesselEnd(Truncation):
 
     @property
     def truncated(self) -> bool:
-        tip = self.intervention.simulation.dof_positions[0]
-        return self.intervention.vessel_tree.at_tree_end(tip)
+        tip = self.intervention.fluoroscopy.tracking3d[0]
+        tip = tracking3d_to_vessel_cs(
+            tip,
+            self.intervention.fluoroscopy.image_rot_zx,
+            self.intervention.fluoroscopy.image_center,
+        )
+        return at_tree_end(tip, self.intervention.vessel_tree)
 
     def step(self) -> None:
         ...

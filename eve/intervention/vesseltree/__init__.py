@@ -1,4 +1,4 @@
-from .vesseltree import VesselTree
+from .vesseltree import VesselTree, find_nearest_branch_to_point, at_tree_end
 from .aorticarch import AorticArch, ArchType
 from .vmr import VMR
 from .util.branch import BranchingPoint, Branch

@@ -6,6 +6,7 @@ import numpy as np
 from .visualisation import Visualisation
 from ..intervention import Intervention
 from ..interimtarget import InterimTarget, InterimTargetDummy
+from ..util.coordtransform import tracking3d_to_vessel_cs
 
 
 class SofaPygame(Visualisation):
@@ -143,20 +144,24 @@ class SofaPygame(Visualisation):
         camera.lookAt = self._initial_look_at
         self.rotate(0, 0)
         target = self.intervention.target.coordinates3d
-        target = fluoroscopy.tracking3d_to_vessel_cs(target)
+        target = tracking3d_to_vessel_cs(
+            target, fluoroscopy.image_rot_zx, fluoroscopy.image_center
+        )
         simulation.target_node.MechanicalObject.translation = [
             target[0],
             target[1],
             target[2],
         ]
         self._sofa.Simulation.init(simulation.target_node)
-
-        interim_targets_vcs = fluoroscopy.tracking3d_to_vessel_cs(
-            self.interim_target.all_coordinates3d
-        )
-        self.interim_targets = self.intervention.simulation.add_interim_targets(
-            list(interim_targets_vcs)
-        )
+        if self.interim_target.all_coordinates3d:
+            interim_targets_vcs = tracking3d_to_vessel_cs(
+                self.interim_target.all_coordinates3d,
+                fluoroscopy.image_rot_zx,
+                fluoroscopy.image_center,
+            )
+            self.interim_targets = self.intervention.simulation.add_interim_targets(
+                list(interim_targets_vcs)
+            )
 
     def close(self):
         self._pygame.quit()  # pylint: disable=no-member

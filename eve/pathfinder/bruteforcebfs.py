@@ -4,8 +4,14 @@ from math import inf
 import numpy as np
 
 from .pathfinder import Pathfinder
-from ..intervention.vesseltree import Branch, BranchingPoint
+from ..intervention.vesseltree import (
+    Branch,
+    BranchingPoint,
+    find_nearest_branch_to_point,
+)
+
 from ..intervention import Intervention
+from ..util.coordtransform import tracking3d_to_vessel_cs, vessel_cs_to_tracking3d
 
 
 def get_length(path: np.ndarray):
@@ -37,17 +43,20 @@ class BruteForceBFS(Pathfinder):
         self.step()
 
     def step(self) -> None:
-        position = self.intervention.fluoroscopy.tracking3d[0]
-        position_vessel_cs = self.intervention.fluoroscopy.tracking3d_to_vessel_cs(
-            position
+        fluoro = self.intervention.fluoroscopy
+        position = fluoro.tracking3d[0]
+        position_vessel_cs = tracking3d_to_vessel_cs(
+            position, fluoro.image_rot_zx, fluoro.image_center
         )
         target = self.intervention.target.coordinates3d
-        target_vessel_cs = self.intervention.fluoroscopy.tracking3d_to_vessel_cs(target)
-        position_branch = self.intervention.vessel_tree.find_nearest_branch_to_point(
-            position_vessel_cs
+        target_vessel_cs = tracking3d_to_vessel_cs(
+            target, fluoro.image_rot_zx, fluoro.image_center
         )
-        target_branch = self.intervention.vessel_tree.find_nearest_branch_to_point(
-            target_vessel_cs
+        position_branch = find_nearest_branch_to_point(
+            position_vessel_cs, self.intervention.vessel_tree
+        )
+        target_branch = find_nearest_branch_to_point(
+            target_vessel_cs, self.intervention.vessel_tree
         )
 
         (
@@ -62,15 +71,19 @@ class BruteForceBFS(Pathfinder):
                 branching_point.coordinates for branching_point in path_branching_points
             ]
             path_branching_points = np.array(path_branching_points)
-            self.path_branching_points3d = (
-                self.intervention.fluoroscopy.vessel_cs_to_tracking3d(
-                    path_branching_points
-                )
+            self.path_branching_points3d = vessel_cs_to_tracking3d(
+                path_branching_points,
+                fluoro.image_rot_zx,
+                fluoro.image_center,
+                fluoro.field_of_view,
             )
         else:
             self.path_branching_points3d = None
-        self.path_points3d = self.intervention.fluoroscopy.vessel_cs_to_tracking3d(
-            path_points
+        self.path_points3d = vessel_cs_to_tracking3d(
+            path_points,
+            fluoro.image_rot_zx,
+            fluoro.image_center,
+            fluoro.field_of_view,
         )
 
     def _init_vessel_tree(self) -> None:
