@@ -16,7 +16,7 @@ vessel_tree = eve.intervention.vesseltree.AorticArch(
 
 device = eve.intervention.device.JShaped()
 
-simulation = eve.intervention.simulation.Simulation(friction=0.001)
+simulation = eve.intervention.simulation.SofaBeamAdapter(friction=0.001)
 
 fluoroscopy = eve.intervention.fluoroscopy.Fluoroscopy(
     simulation=simulation,
@@ -91,7 +91,7 @@ env = eve.Env(
 n_steps = 0
 r_cum = 0.0
 
-env.reset()
+env.reset(store_intervention_state=True)
 
 while True:
     start = perf_counter()
@@ -140,12 +140,17 @@ while True:
     if keys_pressed[pygame.K_q]:
         env.visualisation.zoom(-1000)
     action = (trans, rot)
-    obs, reward, terminal, truncation, info = env.step(action=action)
+    obs, reward, terminal, truncation, info = env.step(
+        action=action, store_intervention_state=True
+    )
     env.render()
     n_steps += 1
     print(obs)
     if keys_pressed[pygame.K_RETURN]:
-        env.reset()
+        env.save_intervention_states(
+            "/Users/lennartkarstensen/stacie/eve_training/eve/examples/states.eve"
+        )
+        env.reset(store_intervention_state=True)
         n_steps = 0
 
     # print(f"FPS: {1/(perf_counter()-start)}")
