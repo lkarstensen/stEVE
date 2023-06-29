@@ -12,7 +12,7 @@ class Rotations(Observation):
 
     @property
     def space(self) -> gym.spaces.Box:
-        n_rotations = len(self.intervention.device_rotations)
+        n_rotations = len(self.intervention.devices)
         shape = (n_rotations, 2)
         low = -np.ones(shape, dtype=np.float32)
         high = np.ones(shape, dtype=np.float32)

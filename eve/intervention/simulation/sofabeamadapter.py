@@ -1,3 +1,4 @@
+from copy import deepcopy
 import importlib
 import math
 import os
@@ -47,24 +48,21 @@ class SofaBeamAdapter(Simulation):
         self._target_size = None
         self._vessel_visual_path: str = None
         self._rng = np.random.default_rng()
+        self._dof_positions = None
+        self._inserted_lengths = None
+        self._rotations = None
 
     @property
     def dof_positions(self) -> np.ndarray:
-        tracking = self._instruments_combined.DOFs.position.value[:, 0:3][::-1]
-        if np.any(np.isnan(tracking[0])):
-            self.logger.warning("Tracking is NAN, resetting devices")
-            self.simulation_error = True
-            self.reset_devices()
-            tracking = self._instruments_combined.DOFs.position.value[:, 0:3][::-1]
-        return tracking
+        return self._dof_positions
 
     @property
     def inserted_lengths(self) -> List[float]:
-        return self._instruments_combined.m_ircontroller.xtip.value
+        return self._inserted_lengths
 
     @property
     def rotations(self) -> List[float]:
-        return self._instruments_combined.m_ircontroller.rotationInstrument.value
+        return self._rotations
 
     def close(self):
         self._unload_simulation()
@@ -73,7 +71,7 @@ class SofaBeamAdapter(Simulation):
         if self.root is not None:
             self._sofa.Simulation.unload(self.root)
 
-    def do_steps(self, action: np.ndarray, duration: float):
+    def step(self, action: np.ndarray, duration: float):
         n_steps = int(duration / self.dt_simulation)
         for _ in range(n_steps):
             inserted_lengths = self.inserted_lengths
@@ -96,6 +94,7 @@ class SofaBeamAdapter(Simulation):
             self._instruments_combined.m_ircontroller.xtip = x_tip
             self._instruments_combined.m_ircontroller.rotationInstrument = tip_rot
             self._sofa.Simulation.animate(self.root, self.root.dt.value)
+        self._update_properties()
 
     def reset_devices(self):
         x = self._instruments_combined.m_ircontroller.xtip.value
@@ -105,6 +104,7 @@ class SofaBeamAdapter(Simulation):
         self._instruments_combined.m_ircontroller.rotationInstrument.value = ri
         self._instruments_combined.m_ircontroller.indexFirstNode.value = 0
         self._sofa.Simulation.reset(self.root)
+        self._update_properties()
 
     def reset(
         self,
@@ -169,6 +169,22 @@ class SofaBeamAdapter(Simulation):
             self._vessel_visual_path = vessel_visual_path
             self.simulation_error = False
             self.logger.debug("Sofa Initialized")
+        self._update_properties()
+
+    def _update_properties(self) -> None:
+        tracking = self._instruments_combined.DOFs.position.value[:, 0:3][::-1]
+        if np.any(np.isnan(tracking[0])):
+            self.logger.warning("Tracking is NAN, resetting devices")
+            self.simulation_error = True
+            self.reset_devices()
+            tracking = self._instruments_combined.DOFs.position.value[:, 0:3][::-1]
+        self._dof_positions = deepcopy(tracking)
+        self._inserted_lengths = deepcopy(
+            self._instruments_combined.m_ircontroller.xtip.value
+        )
+        self._rotations = deepcopy(
+            self._instruments_combined.m_ircontroller.rotationInstrument.value
+        )
 
     def _load_plugins(self):
         self.root.addObject(

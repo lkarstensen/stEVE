@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from ...util import EveObject
 from ..device import Device
 
 
 class Simulation(EveObject, ABC):
+    simulation_error: bool
+
     @property
     @abstractmethod
     def dof_positions(self) -> np.ndarray:
@@ -26,7 +29,7 @@ class Simulation(EveObject, ABC):
         ...
 
     @abstractmethod
-    def do_steps(self, action: np.ndarray, duration: float):
+    def step(self, action: np.ndarray, duration: float):
         ...
 
     @abstractmethod
@@ -54,3 +57,15 @@ class Simulation(EveObject, ABC):
         seed: int = None,
     ):
         ...
+
+    def get_reset_state(self) -> Dict[str, Any]:
+        state = {
+            "dof_positions": self.dof_positions,
+            "inserted_lengths": self.inserted_lengths,
+            "rotations": self.rotations,
+            "simulation_error": self.simulation_error,
+        }
+        return deepcopy(state)
+
+    def get_step_state(self) -> Dict[str, Any]:
+        return self.get_reset_state()

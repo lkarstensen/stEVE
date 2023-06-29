@@ -21,6 +21,7 @@ class AorticArchRandom(VesselTree):
         omit_axis: Optional[str] = None,
         n_coordinate_space_iters: int = 5,
         episodes_between_change: int = 1,
+        **kwargs
     ) -> None:
         self.scale_width_array = scale_width_array or np.linspace(
             0.7, 1.3, 61, endpoint=True

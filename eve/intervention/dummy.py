@@ -1,6 +1,5 @@
 from typing import List
 import numpy as np
-import gymnasium as gym
 
 from .device import Device
 from .intervention import Intervention
@@ -24,52 +23,6 @@ class InterventionDummy(Intervention):
         self.device_lengths_inserted = {device: 0.0 for device in devices}
         self.device_rotations = {device: 0.0 for device in devices}
         self.last_action = np.zeros((len(self.devices), 2), dtype=np.float32)
-
-    @property
-    def tracking2d(self) -> np.ndarray:
-        if self._tracking2d is None:
-            return super().tracking2d
-        return self._tracking2d
-
-    @tracking2d.setter
-    def tracking2d(self, tracking2d: np.ndarray) -> np.ndarray:
-        self._tracking2d = tracking2d
-        self.tracking3d = np.insert(tracking2d, 1, 0.0, -1)
-
-    @property
-    def tracking3d(self) -> np.ndarray:
-        if self._tracking3d is None:
-            return super().tracking3d
-        return self._tracking3d
-
-    @tracking3d.setter
-    def tracking3d(self, tracking3d: np.ndarray) -> np.ndarray:
-        self._tracking3d = tracking3d
-        self.instrument_position_vessel_cs = tracking3d
-
-    @property
-    def tracking2d_space(self) -> gym.spaces.Box:
-        low = self.tracking_low
-        low = low if low.shape[-1] == 2 else np.delete(low, 1, -1)
-        high = self.tracking_high
-        high = high if high.shape[-1] == 2 else np.delete(high, 1, -1)
-        return gym.spaces.Box(low=low, high=high)
-
-    @property
-    def tracking2d_space_episode(self) -> gym.spaces.Box:
-        return self.tracking2d_space
-
-    @property
-    def tracking3d_space(self) -> gym.spaces.Box:
-        low = self.tracking_low
-        low = low if low.shape[-1] == 3 else np.insert(low, 1, -1.0, axis=-1)
-        high = self.tracking_high
-        high = high if high.shape[-1] == 3 else np.insert(high, 1, 1.0, axis=-1)
-        return gym.spaces.Box(low=low, high=high)
-
-    @property
-    def tracking3d_space_episode(self) -> gym.spaces.Box:
-        return self.tracking3d_space
 
     def step(self, action: np.ndarray) -> None:
         self.last_action = action

@@ -74,55 +74,36 @@ class SimulationMP(Simulation):
         self._insertion_point = np.empty(())
         self._insertion_direction = np.empty(())
         self._mesh_path: str = None
+        self._dof_positions = None
+        self._inserted_lengths = None
+        self._rotations = None
 
     @property
     def dof_positions(self) -> np.ndarray:
-        if self._task_queue is None:
-            return self._last_dof_positions
-
-        self._task_queue.put(["dof_positions", (), {}])
-        dof_positions = self._get_result(
-            timeout=self.step_timeout, default_value=self._last_dof_positions
-        )
-        self._last_dof_positions = dof_positions
-        return dof_positions
+        return self._dof_positions
 
     @property
     def inserted_lengths(self) -> List[float]:
-        if self._task_queue is None:
-            return self._last_inserted_lengths
-
-        self._task_queue.put(["inserted_lengths", (), {}])
-        inserted_lengths = self._get_result(
-            timeout=self.step_timeout, default_value=self._last_inserted_lengths
-        )
-        self._last_inserted_lengths = inserted_lengths
-        return inserted_lengths
+        return self._inserted_lengths
 
     @property
     def rotations(self) -> List[float]:
-        if self._task_queue is None:
-            return self._last_rotations
-
-        self._task_queue.put(["rotations", (), {}])
-        rotations = self._get_result(
-            timeout=self.step_timeout, default_value=self._last_rotations
-        )
-        self._last_rotations = rotations
-        return rotations
+        return self._rotations
 
     def close(self):
         self._close_sofa_process()
 
-    def do_steps(self, action: np.ndarray, duration):
+    def step(self, action: np.ndarray, duration):
         if self._task_queue is not None:
             self._task_queue.put(["do_steps", [action, duration], {}])
             self._get_result(timeout=self.step_timeout)
+        self._update_properties()
 
     def reset_devices(self):
         if self._task_queue is not None:
             self._task_queue.put(["reset_devices", [], {}])
             self._get_result(timeout=self.step_timeout)
+        self._update_properties()
 
     def reset(
         self,
@@ -163,18 +144,49 @@ class SimulationMP(Simulation):
                 ]
             )
 
-            self._get_result(timeout=30)
+            self._get_result(timeout=60)
             self.simulation_error = False
             self._insertion_point = insertion_point
             self._insertion_direction = insertion_direction
             self._mesh_path = mesh_path
         self._reset_count += 1
+        self._update_properties()
+
+    def get_current_state(self) -> Dict[str, Any]:
+        state = {
+            "dof_positions": self._dof_positions,
+            "inserted_lengths": self._inserted_lengths,
+            "rotations": self._rotations,
+        }
+        return state
+
+    def set_state(self, state: Dict[str, Any]) -> None:
+        self._dof_positions = state["dof_positions"]
+        self._inserted_lengths = state["inserted_lengths"]
+        self._rotations = state["rotations"]
 
     def add_interim_targets(self, positions: List[Tuple[float, float, float]]):
         raise RuntimeError("This Class can't be used with visualization stuff")
 
     def remove_interim_target(self, interim_target):
         raise RuntimeError("This Class can't be used with visualization stuff")
+
+    def _update_properties(self) -> None:
+        if self._task_queue is None:
+            return
+
+        self._task_queue.put(["dof_positions", (), {}])
+        self._dof_positions = self._get_result(
+            timeout=self.step_timeout, default_value=self._dof_positions
+        )
+        self._task_queue.put(["inserted_lengths", (), {}])
+        self._inserted_lengths = self._get_result(
+            timeout=self.step_timeout, default_value=self._inserted_lengths
+        )
+        self._task_queue.put(["rotations", (), {}])
+        self._rotations = self._get_result(
+            timeout=self.step_timeout, default_value=self._rotations
+        )
 
     def _new_sofa_process(self):
         simu_dict = self.simulation.get_config_dict()

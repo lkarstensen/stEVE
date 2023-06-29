@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Any, Dict, List, Optional
 import gymnasium as gym
 
@@ -16,10 +17,11 @@ class Intervention(EveObject, ABC):
     vessel_tree: VesselTree
     devices: List[Device]
     fluoroscopy: Fluoroscopy
-    simulation: Simulation
     target: Target
     stop_device_at_tree_end: bool = True
     normalize_action: bool = False
+    simulation: Simulation
+    last_action: np.ndarray
 
     @property
     @abstractmethod
@@ -78,3 +80,31 @@ class Intervention(EveObject, ABC):
             new_sim = self.simulation.simulation
             self.fluoroscopy.simulation = new_sim
             self.simulation = new_sim
+
+    def get_reset_state(self) -> Dict[str, Any]:
+        state = {
+            "devices": self.devices,
+            "device_lengths_inserted": self.device_lengths_inserted,
+            "device_rotations": self.device_rotations,
+            "device_lengths_maximum": self.device_lengths_maximum,
+            "device_diameters": self.device_diameters,
+            "action_space": self.action_space,
+            "last_action": self.last_action,
+            "vessel_tree": self.vessel_tree.get_reset_state(),
+            "simulation": self.simulation.get_reset_state(),
+            "target": self.target.get_reset_state(),
+            "fluoroscopy": self.fluoroscopy.get_reset_state(),
+        }
+        return deepcopy(state)
+
+    def get_step_state(self) -> Dict[str, Any]:
+        state = {
+            "device_lengths_inserted": self.device_lengths_inserted,
+            "device_rotations": self.device_rotations,
+            "last_action": self.last_action,
+            "vessel_tree": self.vessel_tree.get_step_state(),
+            "simulation": self.simulation.get_step_state(),
+            "target": self.target.get_step_state(),
+            "fluoroscopy": self.fluoroscopy.get_step_state(),
+        }
+        return deepcopy(state)
