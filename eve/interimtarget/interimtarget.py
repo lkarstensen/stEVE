@@ -4,6 +4,7 @@ import numpy as np
 
 from ..util import EveObject
 from ..intervention import Intervention
+from ..util.coordtransform import tracking3d_to_2d
 
 
 class InterimTarget(EveObject, ABC):
@@ -22,13 +23,13 @@ class InterimTarget(EveObject, ABC):
     def coordinates2d(self) -> np.ndarray:
         if self.coordinates3d is None:
             return None
-        return self.intervention.fluoroscopy.tracking3d_to_2d(self.coordinates3d)
+        return tracking3d_to_2d(self.coordinates3d)
 
     @property
     def all_coordinates2d(self) -> List[np.ndarray]:
         if not self.all_coordinates3d:
             return []
-        return self.intervention.fluoroscopy.tracking3d_to_2d(self.all_coordinates3d)
+        return tracking3d_to_2d(self.all_coordinates3d)
 
     @abstractmethod
     def reset(self, episode_nr: int = 0, seed: Optional[int] = None) -> None:
