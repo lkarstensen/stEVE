@@ -32,16 +32,7 @@ class CenterlineRandom(Target):
         self._branches_initialized = None
         self._rng = random.Random()
 
-    def step(self) -> None:
-        position = self.fluoroscopy.tracking3d[0]
-        position_to_target = self.coordinates3d - position
-
-        self.reached = (
-            True if np.linalg.norm(position_to_target) < self.threshold else False
-        )
-
     def reset(self, episode_nr=0, seed=None) -> None:
-        super().reset(episode_nr, seed)
         if seed is not None:
             self._rng = random.Random(seed)
         if self._branches_initialized != self.vessel_tree.branches:

@@ -24,9 +24,13 @@ class Target(EveObject, ABC):
     def reset(self, episode_nr: int = 0, seed: Optional[int] = None) -> None:
         ...
 
-    @abstractmethod
     def step(self) -> None:
-        ...
+        position = self.fluoroscopy.tracking3d[0]
+        position_to_target = self.coordinates3d - position
+
+        self.reached = (
+            True if np.linalg.norm(position_to_target) < self.threshold else False
+        )
 
     def get_reset_state(self) -> Dict[str, Any]:
         state = {
