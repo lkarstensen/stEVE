@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from abc import ABC, abstractmethod
 import numpy as np
 import gymnasium as gym
+import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d as mplot3d
 
 from .util.branch import Branch, BranchingPoint
 from ...util import EveObject
@@ -107,3 +109,69 @@ def at_tree_end(
         return end_is_open
     else:
         return False
+
+
+def plot_branches(vesseltree: VesselTree):
+    fig = plt.figure()
+    ax = plt.axes(projection="3d")
+    coord_space = vesseltree.coordinate_space_episode
+    margins = [
+        (coord_space.high[0] - coord_space.low[0]),
+        (coord_space.high[1] - coord_space.low[1]),
+        (coord_space.high[2] - coord_space.low[2]),
+    ]
+    margin = max(margins)
+    ax.set_xlim3d(
+        coord_space.low[0],
+        coord_space.low[0] + margin,
+    )
+    ax.set_ylim3d(
+        coord_space.low[1],
+        coord_space.low[1] + margin,
+    )
+    ax.set_zlim3d(
+        coord_space.low[2],
+        coord_space.low[2] + margin,
+    )
+    pick_event_handler = PickEventHandler(vesseltree)
+    fig.canvas.mpl_connect("pick_event", pick_event_handler.on_click)
+    for branch in vesseltree.branches:
+        x = np.delete(branch.coordinates, [1, 2], axis=1).reshape(
+            -1,
+        )
+        y = np.delete(branch.coordinates, [0, 2], axis=1).reshape(
+            -1,
+        )
+        z = np.delete(branch.coordinates, [0, 1], axis=1).reshape(
+            -1,
+        )
+        # ax.plot3D(x, y, z)
+        line = mplot3d.art3d.Line3D(
+            x, y, z, picker=True, pickradius=3, label=branch.name
+        )
+        ax.add_artist(line)
+    # fig.canvas.draw()
+    # plt.pause(0.001)
+    # fig.canvas.start_event_loop(0.00001)
+    plt.show()
+
+
+class PickEventHandler:
+    def __init__(self, vessel_tree: VesselTree) -> None:
+        self.vessel_tree = vessel_tree
+
+    def on_click(self, event):
+        data = event.artist.get_data_3d()
+        idx = event.ind[0] + int((event.ind[-1] - event.ind[0]) / 2)
+        x = data[0][idx]
+        y = data[1][idx]
+        z = data[2][idx]
+        point = np.array([x, y, z])
+        branch = find_nearest_branch_to_point(point, self.vessel_tree)
+
+        dist_to_point = np.linalg.norm(branch.coordinates - point, axis=1)
+        idx = np.argmin(dist_to_point)
+
+        print(branch.name)
+        print(point)
+        print(f"{idx=}")
