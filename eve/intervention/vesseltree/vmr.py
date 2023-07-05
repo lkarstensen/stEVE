@@ -3,7 +3,8 @@ from typing import List, Optional, Tuple, Union
 import os
 import numpy as np
 import pyvista as pv
-from .vesseltree import VesselTree, Insertion, gym
+
+from .vesseltree import VesselTree, Insertion, gym, find_nearest_branch_to_point
 from .util.branch import Branch, calc_branching, rotate_branches
 from .util import calc_insertion
 from .util.meshing import get_temp_mesh_path
@@ -22,7 +23,8 @@ def _get_branches(model_dir, vtu_mesh) -> List[Branch]:
     for file in files:
         file_path = os.path.join(path_dir, file)
         branch = _load_points_from_pth(file_path, vtu_mesh)
-        branches.append(branch)
+        if branch.coordinates.size > 3:
+            branches.append(branch)
     return branches
 
 
