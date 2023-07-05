@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pyvista as pv
 
-from .vesseltree import VesselTree, Insertion, gym, find_nearest_branch_to_point
+from .vesseltree import VesselTree, Insertion, gym
 from .util.branch import Branch, calc_branching, rotate_branches
 from .util import calc_insertion
 from .util.meshing import get_temp_mesh_path
