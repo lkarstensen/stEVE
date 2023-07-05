@@ -147,9 +147,27 @@ def plot_branches(vesseltree: VesselTree):
         )
         # ax.plot3D(x, y, z)
         line = mplot3d.art3d.Line3D(
-            x, y, z, picker=True, pickradius=3, label=branch.name
+            x, y, z, picker=True, pickradius=3, label=branch.name, color="red"
         )
         ax.add_artist(line)
+
+    x = [
+        branching_point.coordinates[0]
+        for branching_point in vesseltree.branching_points
+    ]
+    y = [
+        branching_point.coordinates[1]
+        for branching_point in vesseltree.branching_points
+    ]
+    z = [
+        branching_point.coordinates[2]
+        for branching_point in vesseltree.branching_points
+    ]
+
+    bp_artist = mplot3d.art3d.Line3D(
+        x, y, z, marker="o", color="g", markersize=8, linestyle="None"
+    )
+    ax.add_artist(bp_artist)
     # fig.canvas.draw()
     # plt.pause(0.001)
     # fig.canvas.start_event_loop(0.00001)
