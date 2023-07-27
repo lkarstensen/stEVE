@@ -12,8 +12,8 @@ class Memory(Observation):
         reset_mode: MemoryResetMode,
         name: Optional[str] = None,
     ) -> None:
-        name = name or wrapped_obs.name
-        super().__init__(name)
+        self.name = name or wrapped_obs.name
+        
         assert reset_mode in [
             0,
             1,
