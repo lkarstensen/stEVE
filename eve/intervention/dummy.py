@@ -1,52 +1,82 @@
-from typing import List
+from typing import Any, Dict, List, Optional
 import numpy as np
+import gymnasium as gym
 
 from .device import Device
 from .intervention import Intervention
+from .target import Target
+from .vesseltree import VesselTree
+from .fluoroscopy import Fluoroscopy
 
 
 class InterventionDummy(Intervention):
     def __init__(
         self,
         devices: List[Device],
-        tracking_low: np.ndarray,
-        tracking_high: np.ndarray,
+        vessel_tree: VesselTree,
+        fluoroscopy: Fluoroscopy,
+        target: Target,
+        normalize_action: bool = False,
     ) -> None:
         self.devices = devices
-        self.tracking_low = np.array(tracking_low)
-        self.tracking_high = np.array(tracking_high)
-        self._tracking_low_initial = np.array(tracking_low)
-        self._tracking_high_initial = np.array(tracking_high)
-        self.instrument_position_vessel_cs = np.zeros((2, 3))
-        self._tracking3d = None
-        self._tracking2d = None
-        self.device_lengths_inserted = {device: 0.0 for device in devices}
-        self.device_rotations = {device: 0.0 for device in devices}
+        self.vessel_tree = vessel_tree
+        self.fluoroscopy = fluoroscopy
+        self.target = target
+        self.normalize_action = normalize_action
+
         self.last_action = np.zeros((len(self.devices), 2), dtype=np.float32)
+        self.velocity_limits = np.array(
+            [device.velocity_limit for device in self.devices]
+        )
+
+        if self.normalize_action:
+            high = np.ones_like(self.velocity_limits)
+            space = gym.spaces.Box(low=-high, high=high)
+        else:
+            space = gym.spaces.Box(low=-self.velocity_limits, high=self.velocity_limits)
+        self.action_space = space
+
+        self.device_lengths_maximum = [device.length for device in self.devices]
+        self.device_diameters = [
+            device.sofa_device.radius * 2 for device in self.devices
+        ]
+        self.device_lengths_inserted = [0.0 for _ in devices]
+        self.device_rotations = [0.0 for _ in devices]
+
+        self._np_random = np.random.default_rng()
 
     def step(self, action: np.ndarray) -> None:
-        self.last_action = action
-        max_device_length = max(list(self.device_lengths_inserted.values()))
-        tracking = self.instrument_position_vessel_cs
-        tracking_diff = tracking[:-1] - tracking[1:]
-        tracking_length = np.linalg.norm(tracking_diff, axis=-1)
-        tracking_length = np.sum(tracking_length)
-        scale_factor = max_device_length / tracking_length
-        self.instrument_position_vessel_cs *= scale_factor
-        self.tracking_low = self._tracking_low_initial * scale_factor
-        self.tracking_high = self._tracking_high_initial * scale_factor
+        action = np.array(action).reshape(self.velocity_limits.shape)
+        if self.normalize_action:
+            action = np.clip(action, -1.0, 1.0)
+            self.last_action = action
+            high = self.velocity_limits
+            low = -high
+            action = (action + 1) / 2 * (high - low) + low
+        else:
+            action = np.clip(action, -self.velocity_limits, self.velocity_limits)
+            self.last_action = action
 
-    def reset(self, episode_nr: int = 0, seed: int = None) -> None:
-        self.last_action *= 0.0
+        self.vessel_tree.step()
+        self.fluoroscopy.step()
+        self.target.step()
+
+    def reset(
+        self,
+        episode_number: int = 0,
+        seed: Optional[int] = None,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        if seed is not None:
+            self._np_random = np.random.default_rng(seed)
+
+        vessel_seed = None if seed is None else self._np_random.integers(0, 2**31)
+        self.vessel_tree.reset(episode_number, vessel_seed)
+        target_seed = None if seed is None else self._np_random.integers(0, 2**31)
+        self.target.reset(episode_number, target_seed)
 
     def reset_devices(self) -> None:
         ...
 
     def close(self):
         ...
-
-    def vessel_cs_to_tracking2d(self, array: np.ndarray):
-        return np.delete(array, 1, -1)
-
-    def vessel_cs_to_tracking3d(self, array: np.ndarray):
-        return array
