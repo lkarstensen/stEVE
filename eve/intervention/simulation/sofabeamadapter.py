@@ -197,7 +197,8 @@ class SofaBeamAdapter(Simulation):
             Sofa.Component.LinearSolver.Direct\
             Sofa.Component.IO.Mesh\
             Sofa.Component.ODESolver.Backward\
-            Sofa.Component.Constraint.Lagrangian.Correction",
+            Sofa.Component.Constraint.Lagrangian.Correction\
+            Sofa.Component.Topology.Mapping",
         )
 
     def _basic_setup(self, friction: float):
