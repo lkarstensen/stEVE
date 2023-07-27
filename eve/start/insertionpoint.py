@@ -7,4 +7,4 @@ class InsertionPoint(Start):
         self.intervention = intervention
 
     def reset(self, episode_nr: int = 0) -> None:
-        self.intervention.simulation.reset_devices()
+        self.intervention.reset_devices()
