@@ -18,7 +18,7 @@ device = eve.intervention.device.JShaped()
 
 simulation = eve.intervention.simulation.SofaBeamAdapter(friction=0.001)
 
-fluoroscopy = eve.intervention.fluoroscopy.Fluoroscopy(
+fluoroscopy = eve.intervention.fluoroscopy.TrackingOnly(
     simulation=simulation,
     vessel_tree=vessel_tree,
     image_frequency=7.5,

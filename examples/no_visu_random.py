@@ -10,9 +10,9 @@ if __name__ == "__main__":
     )
     device = eve.intervention.device.JShaped()
 
-    simulation = eve.intervention.simulation.Simulation()
+    simulation = eve.intervention.simulation.SofaBeamAdapter()
 
-    fluoroscopy = eve.intervention.fluoroscopy.Fluoroscopy(
+    fluoroscopy = eve.intervention.fluoroscopy.TrackingOnly(
         simulation=simulation,
         vessel_tree=vessel_tree,
         image_frequency=7.5,
