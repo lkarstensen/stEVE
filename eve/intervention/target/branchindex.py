@@ -1,7 +1,8 @@
+import numpy as np
 from .target import Target
 from ..vesseltree import VesselTree
 from ..fluoroscopy import Fluoroscopy
-from ...util.coordtransform import vessel_cs_to_tracking3d
+from ...util.coordtransform import vessel_cs_to_tracking3d, tracking3d_to_2d
 
 
 class BranchIndex(Target):
@@ -21,6 +22,10 @@ class BranchIndex(Target):
 
         self.coordinates3d = None
         self.reached = False
+
+    @property
+    def coordinates2d(self) -> np.ndarray:
+        return tracking3d_to_2d(self.coordinates3d)
 
     def reset(self, episode_nr=0, seed=None) -> None:
         target_vessel_cs = self.vessel_tree[self.branch].coordinates[self.idx]

@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 import numpy as np
 
 from ...util import EveObject
-from ...util.coordtransform import tracking3d_to_2d
 from ..fluoroscopy import Fluoroscopy
 
 
@@ -12,13 +11,10 @@ class Target(EveObject, ABC):
     # Needs to be set by implementing classes in step() or reset().
     # Coordinates are in the tracking coordinate space
     coordinates3d: np.ndarray
+    coordinates2d: np.ndarray
     reached: bool
     threshold: float
     fluoroscopy: Fluoroscopy
-
-    @property
-    def coordinates2d(self) -> np.ndarray:
-        return tracking3d_to_2d(self.coordinates3d)
 
     @abstractmethod
     def reset(self, episode_nr: int = 0, seed: Optional[int] = None) -> None:

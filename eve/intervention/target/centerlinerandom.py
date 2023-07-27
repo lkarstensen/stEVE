@@ -6,7 +6,7 @@ from .target import Target
 from ..vesseltree import VesselTree
 from ..vesseltree.util.branch import BranchWithRadii
 from ..fluoroscopy import Fluoroscopy
-from ...util.coordtransform import vessel_cs_to_tracking3d
+from ...util.coordtransform import vessel_cs_to_tracking3d, tracking3d_to_2d
 
 
 class CenterlineRandom(Target):
@@ -31,6 +31,10 @@ class CenterlineRandom(Target):
         self._potential_targets = None
         self._branches_initialized = None
         self._rng = random.Random()
+
+    @property
+    def coordinates2d(self) -> np.ndarray:
+        return tracking3d_to_2d(self.coordinates3d)
 
     def reset(self, episode_nr=0, seed=None) -> None:
         if seed is not None:
