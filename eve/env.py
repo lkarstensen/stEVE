@@ -126,7 +126,7 @@ class Env(gym.Env, EveObject):
             )
 
 
-class EnvObsInfoOnly(Env):
+class EnvObsInfoOnly(gym.Env, EveObject):
     def __init__(  # pylint: disable=super-init-not-called
         self,
         intervention: Intervention,
@@ -148,6 +148,13 @@ class EnvObsInfoOnly(Env):
         self.episode_number = 0
         self._intervention_states = []
 
+    @property
+    def observation_space(self) -> gym.Space:
+        return self.observation.space
+
+    @property
+    def action_space(self) -> gym.Space:
+        return self.intervention.action_space
     def step(
         self,
         action: np.ndarray,
