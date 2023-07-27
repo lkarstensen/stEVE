@@ -95,7 +95,7 @@ class SimulationMP(Simulation):
 
     def step(self, action: np.ndarray, duration):
         if self._task_queue is not None:
-            self._task_queue.put(["do_steps", [action, duration], {}])
+            self._task_queue.put(["step", [action, duration], {}])
             self._get_result(timeout=self.step_timeout)
         self._update_properties()
 
