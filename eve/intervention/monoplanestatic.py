@@ -3,22 +3,22 @@ from typing import Any, Dict, List, Optional
 import gymnasium as gym
 
 import numpy as np
-from .intervention import Intervention
+from .intervention import SimulatedIntervention
 from .target import Target
 from .vesseltree import VesselTree
 from .vesseltree.vesseltree import at_tree_end
-from .fluoroscopy import Fluoroscopy
+from .fluoroscopy import SimulatedFluoroscopy
 from .device import Device
 from .simulation import Simulation
 
 
-class MonoPlaneStatic(Intervention):
+class MonoPlaneStatic(SimulatedIntervention):
     def __init__(
         self,
         vessel_tree: VesselTree,
         devices: List[Device],
         simulation: Simulation,
-        fluoroscopy: Fluoroscopy,
+        fluoroscopy: SimulatedFluoroscopy,
         target: Target,
         stop_device_at_tree_end: bool = True,
         normalize_action: bool = False,
