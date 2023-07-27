@@ -91,7 +91,7 @@ env = eve.Env(
 n_steps = 0
 r_cum = 0.0
 
-env.reset(store_intervention_state=True)
+env.reset()
 
 while True:
     start = perf_counter()
@@ -140,17 +140,12 @@ while True:
     if keys_pressed[pygame.K_q]:
         env.visualisation.zoom(-1000)
     action = (trans, rot)
-    obs, reward, terminal, truncation, info = env.step(
-        action=action, store_intervention_state=True
-    )
+    obs, reward, terminal, truncation, info = env.step(action=action)
     env.render()
     n_steps += 1
     print(obs)
     if keys_pressed[pygame.K_RETURN]:
-        env.save_intervention_states(
-            "/Users/lennartkarstensen/stacie/eve_training/eve/examples/states.eve"
-        )
-        env.reset(store_intervention_state=True)
+        env.reset()
         n_steps = 0
 
     # print(f"FPS: {1/(perf_counter()-start)}")
