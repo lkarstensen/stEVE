@@ -2,11 +2,11 @@ from typing import Dict, List, Optional, Tuple
 from PIL import Image, ImageDraw, ImageChops
 import numpy as np
 import gymnasium as gym
-from .fluoroscopy import Fluoroscopy
+from .fluoroscopy import SimulatedFluoroscopy
 from ..simulation import Simulation
 
 
-class Pillow(Fluoroscopy):
+class Pillow(SimulatedFluoroscopy):
     def __init__(
         self,
         image_size: Tuple[int, int],
