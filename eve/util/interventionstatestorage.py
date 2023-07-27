@@ -7,6 +7,26 @@ from ..intervention import Intervention
 from ..visualisation import Visualisation, VisualisationDummy
 
 
+class InterventionStateRecorder:
+    def __init__(self, intervention: Intervention) -> None:
+        self.intervention = intervention
+        self._intervention_states = []
+
+    def step(self):
+        self._intervention_states.append(self.intervention.get_step_state())
+
+    def reset(self):
+        self._intervention_states = [self.intervention.get_reset_state()]
+
+    def save_intervention_states(self, path: str, additional_info: Any = None):
+        with open(path, "wb") as handle:
+            pickle.dump(
+                [self._intervention_states, additional_info],
+                handle,
+                protocol=pickle.HIGHEST_PROTOCOL,
+            )
+
+
 def _dict_to_dummy(state_dict: Dict[str, Any]):
     class Dummy:
         last_action: np.ndarray
@@ -37,7 +57,8 @@ def _update_dummy(dummy, state_dict: Dict):
 
 def saved_states_to_sar(path: str, env: Env):
     with open(path, "rb") as handle:
-        intervention_states: List = pickle.load(handle)
+        # [0] is states, [1] is additional info
+        intervention_states: List = pickle.load(handle)[0]
     dummy_intervention = _dict_to_dummy(intervention_states.pop(0))
     env_dict = env.get_config_dict()
     new_env: Env = Env.from_config_dict(

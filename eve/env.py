@@ -3,7 +3,6 @@ from importlib import import_module
 from typing import List, Tuple, Dict, Any, Optional, TypeVar, Union
 import numpy as np
 import gymnasium as gym
-import pickle
 
 from .intervention import Intervention
 from .observation import Observation, ObsDict, ObsTuple
@@ -52,7 +51,6 @@ class Env(gym.Env, EveObject):
         self.interim_target = interim_target or InterimTargetDummy()
 
         self.episode_number = 0
-        self._intervention_states = []
 
     @property
     def observation_space(self) -> gym.Space:
@@ -65,7 +63,6 @@ class Env(gym.Env, EveObject):
     def step(
         self,
         action: np.ndarray,
-        store_intervention_state: bool = False,
     ) -> Tuple[ObsType, float, bool, bool, Dict[str, Any]]:
         self.intervention.step(action)
         self.pathfinder.step()
@@ -75,8 +72,6 @@ class Env(gym.Env, EveObject):
         self.terminal.step()
         self.truncation.step()
         self.info.step()
-        if store_intervention_state:
-            self._intervention_states.append(self.intervention.get_step_state())
         return (
             deepcopy(self.observation()),
             deepcopy(self.reward.reward),
@@ -90,7 +85,6 @@ class Env(gym.Env, EveObject):
         *,
         seed: Optional[int] = None,
         options: Optional[Dict[str, Any]] = None,
-        store_intervention_state: bool = False,
     ) -> Tuple[ObsType, Dict[str, Any]]:
         super().reset(seed=seed)
         self.intervention.reset(self.episode_number, seed, options)
@@ -104,9 +98,6 @@ class Env(gym.Env, EveObject):
         self.info.reset(self.episode_number)
         self.visualisation.reset(self.episode_number)
         self.episode_number += 1
-        self._intervention_states = []
-        if store_intervention_state:
-            self._intervention_states.append(self.intervention.get_reset_state())
         return (
             deepcopy(self.observation()),
             deepcopy(self.info()),
@@ -118,12 +109,6 @@ class Env(gym.Env, EveObject):
     def close(self):
         self.intervention.close()
         self.visualisation.close()
-
-    def save_intervention_states(self, path: str):
-        with open(path, "wb") as handle:
-            pickle.dump(
-                self._intervention_states, handle, protocol=pickle.HIGHEST_PROTOCOL
-            )
 
 
 class EnvObsInfoOnly(gym.Env, EveObject):
@@ -146,7 +131,6 @@ class EnvObsInfoOnly(gym.Env, EveObject):
         self.interim_target = interim_target or InterimTargetDummy()
 
         self.episode_number = 0
-        self._intervention_states = []
 
     @property
     def observation_space(self) -> gym.Space:
@@ -158,15 +142,13 @@ class EnvObsInfoOnly(gym.Env, EveObject):
     def step(
         self,
         action: np.ndarray,
-        store_intervention_state: bool = False,
     ) -> Tuple[ObsType, Dict[str, Any]]:
         self.intervention.step(action)
         self.pathfinder.step()
         self.interim_target.step()
         self.observation.step()
         self.info.step()
-        if store_intervention_state:
-            self._intervention_states.append(self.intervention.get_step_state())
+
         return (
             deepcopy(self.observation()),
             deepcopy(self.info.info),
@@ -177,7 +159,6 @@ class EnvObsInfoOnly(gym.Env, EveObject):
         *,
         seed: Optional[int] = None,
         options: Optional[Dict[str, Any]] = None,
-        store_intervention_state: bool = False,
     ) -> Tuple[ObsType, Dict[str, Any]]:
         super().reset(seed=seed)
         self.intervention.reset(self.episode_number, seed, options)
@@ -188,9 +169,7 @@ class EnvObsInfoOnly(gym.Env, EveObject):
         self.info.reset(self.episode_number)
         self.visualisation.reset(self.episode_number)
         self.episode_number += 1
-        self._intervention_states = []
-        if store_intervention_state:
-            self._intervention_states.append(self.intervention.get_reset_state())
+
         return (
             deepcopy(self.observation()),
             deepcopy(self.info.info),
