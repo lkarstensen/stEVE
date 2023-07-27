@@ -75,7 +75,7 @@ class SofaPygame(Visualisation):
         buffer = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
         image_array = np.fromstring(buffer, np.uint8)
 
-        if image_array != []:
+        if image_array.shape:
             image = image_array.reshape(height, width, 3)
             image = np.flipud(image)[:, :, :3]
         else:
@@ -138,7 +138,25 @@ class SofaPygame(Visualisation):
         self._distance = np.linalg.norm(self._initial_direction)
         self._initial_direction = self._initial_direction / self._distance
         fluoroscopy = self.intervention.fluoroscopy
-        self._initial_look_at = fluoroscopy.image_center
+
+        vessel_tree = self.intervention.vessel_tree
+        vessel_low = vessel_tree.coordinate_space.low
+        vessel_high = vessel_tree.coordinate_space.high
+        vessel_center = (vessel_high + vessel_low) / 2
+
+        print(fluoroscopy.image_center)
+        print(vessel_center)
+        print(look_at)
+        if fluoroscopy.image_center != [0,0,0]:
+            look_at[0] = fluoroscopy.image_center[0]
+            look_at[1] = fluoroscopy.image_center[1]
+            look_at[2] = fluoroscopy.image_center[2]
+        else:
+            look_at[0] = vessel_center[0]
+            look_at[1] = vessel_center[1]
+            look_at[2] = vessel_center[2]
+            
+        self._initial_look_at = look_at
         self._theta_x = fluoroscopy.image_rot_zx[1] * np.pi / 180
         self._theta_z = fluoroscopy.image_rot_zx[0] * np.pi / 180
         camera.lookAt = self._initial_look_at
