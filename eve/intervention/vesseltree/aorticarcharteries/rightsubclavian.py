@@ -60,9 +60,9 @@ def right_subclavian_IV(
         chs_point_normal(
             coords_mean=(0.0, 0.0, 0.0),
             coords_sigma=(0.0, 0.0, 0.0),
-            direction_mean=(0.1, 0.1, 2.0),
+            direction_mean=(0.1, -0.1, 2.0),
             direction_sigma=(0.1, 0.1, 0.3),
-            direction_magnitude_mean_and_sigma=(2.0, 0.4),
+            direction_magnitude_mean_and_sigma=(3.0, 0.4),
             radius_mean_and_sigma=(10.0, 0.33),
             d_radius_mean_and_sigma=(0.0, 0.0),
             coord_offset=start,
