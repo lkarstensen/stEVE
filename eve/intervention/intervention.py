@@ -8,45 +8,23 @@ import numpy as np
 from ..util import EveObject
 from .target import Target
 from .vesseltree import VesselTree
-from .fluoroscopy import Fluoroscopy
+from .fluoroscopy import Fluoroscopy, SimulatedFluoroscopy
 from .simulation import Simulation, SimulationMP
 from .device import Device
 
 
 class Intervention(EveObject, ABC):
-    vessel_tree: VesselTree
     devices: List[Device]
+    vessel_tree: VesselTree
     fluoroscopy: Fluoroscopy
     target: Target
-    stop_device_at_tree_end: bool = True
     normalize_action: bool = False
-    simulation: Simulation
     last_action: np.ndarray
-
-    @property
-    @abstractmethod
-    def device_lengths_inserted(self) -> List[float]:
-        ...
-
-    @property
-    @abstractmethod
-    def device_rotations(self) -> List[float]:
-        ...
-
-    @property
-    @abstractmethod
-    def device_lengths_maximum(self) -> List[float]:
-        ...
-
-    @property
-    @abstractmethod
-    def device_diameters(self) -> List[float]:
-        ...
-
-    @property
-    @abstractmethod
-    def action_space(self) -> gym.spaces.Box:
-        ...
+    device_lengths_inserted: List[float]
+    device_rotations: List[float]
+    device_lengths_maximum: List[float]
+    device_diameters: List[float]
+    action_space: gym.spaces.Box
 
     @abstractmethod
     def step(self, action: np.ndarray) -> None:
@@ -68,6 +46,38 @@ class Intervention(EveObject, ABC):
     @abstractmethod
     def reset_devices(self) -> None:
         ...
+
+    def get_reset_state(self) -> Dict[str, Any]:
+        state = {
+            "devices": self.devices,
+            "device_lengths_inserted": self.device_lengths_inserted,
+            "device_rotations": self.device_rotations,
+            "device_lengths_maximum": self.device_lengths_maximum,
+            "device_diameters": self.device_diameters,
+            "action_space": self.action_space,
+            "last_action": self.last_action,
+            "vessel_tree": self.vessel_tree.get_reset_state(),
+            "target": self.target.get_reset_state(),
+            "fluoroscopy": self.fluoroscopy.get_reset_state(),
+        }
+        return deepcopy(state)
+
+    def get_step_state(self) -> Dict[str, Any]:
+        state = {
+            "device_lengths_inserted": self.device_lengths_inserted,
+            "device_rotations": self.device_rotations,
+            "last_action": self.last_action,
+            "vessel_tree": self.vessel_tree.get_step_state(),
+            "target": self.target.get_step_state(),
+            "fluoroscopy": self.fluoroscopy.get_step_state(),
+        }
+        return deepcopy(state)
+
+
+class SimulatedIntervention(Intervention, ABC):
+    fluoroscopy: SimulatedFluoroscopy
+    simulation: Simulation
+    stop_device_at_tree_end: bool = True
 
     def make_mp(self, step_timeout: float = 2, restart_n_resets: int = 200):
         if isinstance(self.simulation, Simulation):
