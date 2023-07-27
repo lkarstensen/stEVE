@@ -6,7 +6,7 @@ from .vesseltree import (
 )
 from .aorticarch import AorticArch, ArchType
 from .vmr import VMR
-from .util.branch import BranchingPoint, Branch
+from .util.branch import BranchingPoint, Branch, BranchWithRadii
 from .aorticarchrandom import AorticArchRandom
 from .dummy import VesselTreeDummy
 from .frommesh import FromMesh
