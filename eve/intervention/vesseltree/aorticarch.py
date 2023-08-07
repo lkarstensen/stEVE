@@ -72,7 +72,7 @@ class AorticArch(VesselTree):
     @property
     def mesh_path(self) -> str:
         if self._mesh_path is None:
-            self._mesh_path = generate_temp_mesh(self.branches, "aorticarch", 0.995)
+            self._mesh_path = generate_temp_mesh(self.branches, "aorticarch", 0.99)
         return self._mesh_path
 
     def reset(self, episode_nr=0, seed: int = None) -> None:
