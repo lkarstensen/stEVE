@@ -5,6 +5,6 @@ from . import (
     target,
     vesseltree,
 )
-from .intervention import Intervention
+from .intervention import Intervention, SimulatedIntervention
 from .dummy import InterventionDummy
 from .monoplanestatic import MonoPlaneStatic
