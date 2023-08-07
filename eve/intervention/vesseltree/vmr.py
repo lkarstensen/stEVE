@@ -15,14 +15,14 @@ SCALING_FACTOR = 10
 LOW_HIGH_BUFFER = 3
 
 
-def _get_branches(model_dir, vtu_mesh) -> List[Branch]:
+def _get_branches(model_dir, vtu_mesh, check_if_points_in_mesh: bool) -> List[Branch]:
     path_dir = os.path.join(model_dir, "Paths")
     files = _get_available_pths(path_dir)
     files = sorted(files)
     branches = []
     for file in files:
         file_path = os.path.join(path_dir, file)
-        branch = _load_points_from_pth(file_path, vtu_mesh)
+        branch = _load_points_from_pth(file_path, vtu_mesh, check_if_points_in_mesh)
         if branch.coordinates.size > 3:
             branches.append(branch)
     return branches
@@ -43,7 +43,9 @@ def _get_vtk_file(directory: str, file_ending: str) -> str:
             return path
 
 
-def _load_points_from_pth(pth_file_path: str, vtu_mesh: pv.UnstructuredGrid) -> Branch:
+def _load_points_from_pth(
+    pth_file_path: str, vtu_mesh: pv.UnstructuredGrid, check_if_points_in_mesh: bool
+) -> Branch:
     points = []
     name = os.path.basename(pth_file_path)[:-4]
     with open(pth_file_path, "r", encoding="utf-8") as file:
@@ -66,9 +68,10 @@ def _load_points_from_pth(pth_file_path: str, vtu_mesh: pv.UnstructuredGrid) -> 
             continue
         points.append([x, y, z])
     points = np.array(points, dtype=np.float32)
-    to_keep = vtu_mesh.find_containing_cell(points) + 1
-    to_keep = np.argwhere(to_keep)
-    points = points[to_keep.reshape(-1)]
+    if check_if_points_in_mesh:
+        to_keep = vtu_mesh.find_containing_cell(points) + 1
+        to_keep = np.argwhere(to_keep)
+        points = points[to_keep.reshape(-1)]
     return Branch(
         name=name.lower(),
         coordinates=np.array(points, dtype=np.float32),
@@ -84,6 +87,7 @@ class VMR(VesselTree):
         insertion_direction_idx_diff: int,
         approx_branch_radii: Union[List[float], float],
         rotate_yzx_deg: Optional[Tuple[float, float, float]] = None,
+        check_if_points_in_mesh: bool = True,
     ) -> None:
         self.model = model
         self.insertion_point_idx = insertion_point_idx
@@ -91,6 +95,7 @@ class VMR(VesselTree):
         self.insertion_vessel_name = insertion_vessel_name.lower()
         self.approx_branch_radii = approx_branch_radii
         self.rotate_yzx_deg = rotate_yzx_deg
+        self.check_if_points_in_mesh = check_if_points_in_mesh
 
         self._model_folder = download_vmr_files(model)
         self.mesh_folder = os.path.join(self._model_folder, "Meshes")
@@ -142,7 +147,7 @@ class VMR(VesselTree):
         mesh_path = _get_vtk_file(self.mesh_folder, ".vtu")
         mesh = pv.read(mesh_path)
         mesh.scale([SCALING_FACTOR, SCALING_FACTOR, SCALING_FACTOR], inplace=True)
-        branches = _get_branches(self._model_folder, mesh)
+        branches = _get_branches(self._model_folder, mesh, self.check_if_points_in_mesh)
 
         if self.rotate_yzx_deg is not None:
             branches = rotate_branches(branches, self.rotate_yzx_deg)
