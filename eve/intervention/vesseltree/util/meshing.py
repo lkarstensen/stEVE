@@ -8,13 +8,13 @@ from .voxelcube import VoxelCube, create_empty_voxel_cube_from_branches
 
 
 def get_surface_mesh(
-    voxel_cube: VoxelCube, gradient_direction: str = "descent"
+    voxel_cube: VoxelCube, gradient_direction: str = "descent", level: float = None
 ) -> pv.PolyData:
     from skimage import measure
 
     vertices, faces, _, _ = measure.marching_cubes(
         voxel_cube.value_array,
-        None,
+        level,
         spacing=voxel_cube.spacing,
         gradient_direction=gradient_direction,
     )
