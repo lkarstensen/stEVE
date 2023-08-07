@@ -208,9 +208,11 @@ def create_empty_voxel_cube_from_branches(
 
     branch_lows = [branch.low for branch in branches]
     low = np.min(branch_lows, axis=0)
+    low = np.floor(low / spacing) * spacing
 
     branch_highs = [branch.high for branch in branches]
     high = np.max(branch_highs, axis=0)
+    high = np.ceil(high / spacing) * spacing
 
     axes_length = high - low
     world_offset = low
@@ -233,6 +235,8 @@ def create_voxel_cube_from_mesh(
     bounds = mesh.bounds
     low = np.array([bounds[0], bounds[2], bounds[4]])
     high = np.array([bounds[1], bounds[3], bounds[5]])
+    low = np.floor(low / spacing) * spacing
+    high = np.ceil(high / spacing) * spacing
 
     axes_length = high - low
     world_offset = low
