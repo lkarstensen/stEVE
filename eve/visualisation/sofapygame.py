@@ -41,6 +41,7 @@ class SofaPygame(Visualisation):
         self.interim_targets = []
 
     def render(self) -> None:
+        self._pygame.event.get()
         simulation = self.intervention.simulation
         if self.interim_target.reached:
             it_to_remove = self.interim_targets.pop(0)
@@ -144,9 +145,6 @@ class SofaPygame(Visualisation):
         vessel_high = vessel_tree.coordinate_space.high
         vessel_center = (vessel_high + vessel_low) / 2
 
-        print(fluoroscopy.image_center)
-        print(vessel_center)
-        print(look_at)
         if fluoroscopy.image_center != [0,0,0]:
             look_at[0] = fluoroscopy.image_center[0]
             look_at[1] = fluoroscopy.image_center[1]
