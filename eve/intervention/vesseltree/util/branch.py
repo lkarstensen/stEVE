@@ -1,10 +1,11 @@
 from typing import List, Tuple, Union
 from dataclasses import dataclass, field
 import numpy as np
+from ....util import EveObject
 
 
 @dataclass(frozen=True, eq=True)
-class Branch:
+class Branch(EveObject):
     name: str
     coordinates: np.ndarray = field(init=True, compare=False, repr=True)
     _coordinates: List[Tuple[float, float, float]] = field(
