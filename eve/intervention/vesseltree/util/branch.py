@@ -13,9 +13,12 @@ class Branch(EveObject):
     )
 
     def __post_init__(self):
-        coordinates = tuple([tuple(coordinate) for coordinate in self.coordinates])
+        if not isinstance(self.coordinates, np.ndarray):
+            coordinates = np.array(self.coordinates)
+            object.__setattr__(self, "coordinates", coordinates)
+        _coordinates = tuple([tuple(coordinate) for coordinate in self.coordinates])
         self.coordinates.flags.writeable = False
-        object.__setattr__(self, "_coordinates", coordinates)
+        object.__setattr__(self, "_coordinates", _coordinates)
 
     def __repr__(self) -> str:
         return self.name
@@ -81,12 +84,18 @@ class BranchWithRadii(Branch):
     )
 
     def __post_init__(self):
-        coordinates = tuple([tuple(coordinate) for coordinate in self.coordinates])
-        radii = tuple(self.radii.tolist())
+        if not isinstance(self.coordinates, np.ndarray):
+            coordinates = np.array(self.coordinates)
+            object.__setattr__(self, "coordinates", coordinates)
+        if not isinstance(self.radii, np.ndarray):
+            radii = np.array(self.radii)
+            object.__setattr__(self, "radii", radii)
+        _coordinates = tuple([tuple(coordinate) for coordinate in self.coordinates])
+        _radii = tuple(self.radii.tolist())
         self.coordinates.flags.writeable = False
         self.radii.flags.writeable = False
-        object.__setattr__(self, "_coordinates", coordinates)
-        object.__setattr__(self, "_radii", radii)
+        object.__setattr__(self, "_coordinates", _coordinates)
+        object.__setattr__(self, "_radii", _radii)
 
     @property
     def low(self) -> np.ndarray:
