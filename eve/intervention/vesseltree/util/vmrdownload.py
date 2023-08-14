@@ -48,9 +48,24 @@ def download_vmr_files(model: str) -> str:
     path_model_mesh = os.path.join(path_model, "Meshes")
     if not os.path.exists(path_model_mesh):
         os.mkdir(path_model_mesh)
-    base_mesh_url = f"https://vascularmodel.com/svprojects/{model}/Meshes/{model}"
-    vtp_url = base_mesh_url + ".vtp"
-    vtu_url = base_mesh_url + ".vtu"
+
+    meshes_url = f"https://vascularmodel.com/svprojects/{model}/Meshes/"
+
+    data = requests.get(meshes_url, timeout=10)
+    text = data.text
+
+    vtp_mesh = text.find(".vtp")
+    start = text.find('">', vtp_mesh) + 2
+    end = text.find("</a>", vtp_mesh)
+    vtp_mesh = text[start:end]
+    vtp_url = meshes_url + vtp_mesh
+
+    vtu_mesh = text.find(".vtu")
+    start = text.find('">', vtu_mesh) + 2
+    end = text.find("</a>", vtu_mesh)
+    vtu_mesh = text[start:end]
+    vtu_url = meshes_url + vtu_mesh
+
     vtp_path = os.path.join(path_model_mesh, model + ".vtp")
     vtu_path = os.path.join(path_model_mesh, model + ".vtu")
     if not os.path.isfile(vtp_path):
