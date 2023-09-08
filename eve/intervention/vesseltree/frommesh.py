@@ -3,7 +3,12 @@ import numpy as np
 import gymnasium as gym
 
 from .vesseltree import VesselTree, Insertion
-from .util.branch import calc_branching, Branch
+from .util.branch import (
+    calc_branching,
+    Branch,
+    BranchWithRadii,
+    calc_branching_with_radii,
+)
 from .util.meshing import (
     rotate_mesh,
     scale_mesh,
@@ -20,7 +25,7 @@ class FromMesh(VesselTree):
         mesh: str,
         insertion_position: Tuple[float, float, float],
         insertion_direction: Tuple[float, float, float],
-        branches: Optional[List[Branch]] = None,
+        branches: Optional[List[Union[Branch, BranchWithRadii]]] = None,
         approx_branch_radii: Optional[Union[List[float], float]] = None,
         visu_mesh: Optional[str] = None,
         scaling_xyz: Optional[Tuple[float, float, float]] = None,
@@ -51,8 +56,6 @@ class FromMesh(VesselTree):
 
         self.insertion = Insertion(insertion_position, insertion_direction)
 
-        branches = None
-
         self.branches = branches
         self.approx_branch_radii = approx_branch_radii
         if branches is not None:
@@ -60,8 +63,10 @@ class FromMesh(VesselTree):
             high = np.max(branch_highs, axis=0)
             branch_lows = [branch.low for branch in branches]
             low = np.min(branch_lows, axis=0)
-
-            self.branching_points = calc_branching(branches, approx_branch_radii)
+            if isinstance(branches[0], BranchWithRadii):
+                self.branching_points = calc_branching_with_radii(branches)
+            else:
+                self.branching_points = calc_branching(branches, approx_branch_radii)
             centerline_coordinates = [branch.coordinates for branch in branches]
             self.centerline_coordinates = np.concatenate(centerline_coordinates)
         else:
