@@ -39,3 +39,41 @@ class KeyboardOneDevice:
         if keys_pressed[pygame.K_RIGHT]:
             rot -= self.actions[1]
         return np.array((trans, rot))
+
+
+class KeyboardTwoDevice:
+    def __init__(
+        self,
+        actions: Tuple[Tuple[float, float], Tuple[float, float]] = (
+            (25, 3.14),
+            (25, 3.14),
+        ),
+    ) -> None:
+        pygame.init()
+        self.actions = actions
+
+    def get_action(self):
+        trans0 = 0.0
+        rot0 = 0.0
+        trans1 = 0.0
+        rot1 = 0.0
+        pygame.event.get()
+        keys_pressed = pygame.key.get_pressed()
+        if keys_pressed[pygame.K_UP]:
+            trans0 += self.actions[0][0]
+        if keys_pressed[pygame.K_DOWN]:
+            trans0 -= self.actions[0][0]
+        if keys_pressed[pygame.K_LEFT]:
+            rot0 += self.actions[0][1]
+        if keys_pressed[pygame.K_RIGHT]:
+            rot0 -= self.actions[0][1]
+
+        if keys_pressed[pygame.K_z]:
+            trans1 += self.actions[1][0]
+        if keys_pressed[pygame.K_h]:
+            trans1 -= self.actions[1][0]
+        if keys_pressed[pygame.K_g]:
+            rot1 += self.actions[1][1]
+        if keys_pressed[pygame.K_j]:
+            rot1 -= self.actions[1][1]
+        return np.array(((trans0, rot0), (trans1, rot1)))
