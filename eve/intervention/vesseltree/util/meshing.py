@@ -1,5 +1,6 @@
 from tempfile import gettempdir
 import os
+from time import perf_counter
 from typing import Iterable, Tuple
 import numpy as np
 import pyvista as pv
@@ -67,8 +68,8 @@ def generate_temp_mesh(
 def get_temp_mesh_path(name_base):
     while True:
         pid = os.getpid()
-        nr = int(os.times().elapsed)
-        mesh_path = f"{gettempdir()}/{name_base}_{pid}-{nr}.obj"
+        nr = int(perf_counter() * 10000)
+        mesh_path = os.path.join(gettempdir(), f"Test_{pid}-{nr}.obj")
         if not os.path.exists(mesh_path):
             try:
                 open(mesh_path, "x", encoding="utf-8").close()
