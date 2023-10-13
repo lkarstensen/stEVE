@@ -8,7 +8,10 @@ from .util.branch import (
     Branch,
     BranchWithRadii,
     calc_branching_with_radii,
+    rotate_array,
 )
+
+from .util.branch import rotate_branches as rot_branches_func
 from .util.meshing import (
     rotate_mesh,
     scale_mesh,
@@ -25,19 +28,23 @@ class FromMesh(VesselTree):
         mesh: str,
         insertion_position: Tuple[float, float, float],
         insertion_direction: Tuple[float, float, float],
-        branches: Optional[List[Union[Branch, BranchWithRadii]]] = None,
+        branch_list: Optional[List[Union[Branch, BranchWithRadii]]] = None,
         approx_branch_radii: Optional[Union[List[float], float]] = None,
         visu_mesh: Optional[str] = None,
         scaling_xyz: Optional[Tuple[float, float, float]] = None,
         rotation_yzx_deg: Optional[Tuple[float, float, float]] = None,
+        rotate_branches: bool = True,
+        rotate_ip: bool = True,
     ) -> None:
         self.mesh = mesh
         self.visu_mesh = visu_mesh
         self.insertion_position = insertion_position
         self.insertion_direction = insertion_direction
+        self.branch_list = branch_list
 
         self.scaling_xyz = scaling_xyz or [1.0, 1.0, 1.0]
         self.rotation_yzx_deg = rotation_yzx_deg or [0.0, 0.0, 0.0]
+        self.rotate_branches = rotate_branches
 
         temp_mesh_path = get_temp_mesh_path("mesh_from_file")
         mesh = load_mesh(mesh)
@@ -53,26 +60,46 @@ class FromMesh(VesselTree):
             mesh = scale_mesh(mesh, self.scaling_xyz)
             save_mesh(mesh, temp_mesh_path)
         self.visu_mesh_path = temp_mesh_path
+        if rotate_ip:
+            self.insertion = Insertion(
+                rotate_array(
+                    np.array(insertion_position),
+                    rotation_yzx_deg[0],
+                    rotation_yzx_deg[1],
+                    rotation_yzx_deg[2],
+                ),
+                rotate_array(
+                    np.array(insertion_direction),
+                    rotation_yzx_deg[0],
+                    rotation_yzx_deg[1],
+                    rotation_yzx_deg[2],
+                ),
+            )
+        else:
+            self.insertion = Insertion(insertion_position, insertion_direction)
 
-        self.insertion = Insertion(insertion_position, insertion_direction)
-
-        self.branches = branches
-        self.approx_branch_radii = approx_branch_radii
-        if branches is not None:
-            branch_highs = [branch.high for branch in branches]
+        if branch_list is not None:
+            if rotate_branches:
+                branch_list = rot_branches_func(
+                    branches=branch_list, rotate_yzx_deg=rotation_yzx_deg
+                )
+            branch_highs = [branch.high for branch in branch_list]
             high = np.max(branch_highs, axis=0)
-            branch_lows = [branch.low for branch in branches]
+            branch_lows = [branch.low for branch in branch_list]
             low = np.min(branch_lows, axis=0)
-            if isinstance(branches[0], BranchWithRadii):
-                self.branching_points = calc_branching_with_radii(branches)
+            if isinstance(branch_list[0], BranchWithRadii):
+                self.branching_points = calc_branching_with_radii(branch_list)
             else:
-                self.branching_points = calc_branching(branches, approx_branch_radii)
-            centerline_coordinates = [branch.coordinates for branch in branches]
+                self.branching_points = calc_branching(branch_list, approx_branch_radii)
+            centerline_coordinates = [branch.coordinates for branch in branch_list]
             self.centerline_coordinates = np.concatenate(centerline_coordinates)
         else:
             high, low = get_high_low_from_mesh(temp_mesh_path)
             self.branching_points = None
             self.centerline_coordinates = np.zeros((1, 3), dtype=np.float32)
+
+        self.branches = branch_list
+        self.approx_branch_radii = approx_branch_radii
         self.coordinate_space = gym.spaces.Box(low, high)
         self.coordinate_space_episode = self.coordinate_space
 
