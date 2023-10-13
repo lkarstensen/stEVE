@@ -298,7 +298,7 @@ def rotate_branches(
 ) -> Tuple[Branch]:
     new_branches = []
     for branch in branches:
-        new_coordinates = _rotate_array(
+        new_coordinates = rotate_array(
             array=branch.coordinates,
             y_deg=rotate_yzx_deg[0],
             z_deg=rotate_yzx_deg[1],
@@ -333,7 +333,7 @@ def omit_branches_axis(
     return tuple(new_branches)
 
 
-def _rotate_array(
+def rotate_array(
     array: np.ndarray,
     y_deg: float,
     z_deg: float,
