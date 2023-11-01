@@ -1,3 +1,3 @@
-from .simulation import Simulation
+from .simulation import Simulation, SimulationDummy
 from .simulationmp import SimulationMP
 from .sofabeamadapter import SofaBeamAdapter
