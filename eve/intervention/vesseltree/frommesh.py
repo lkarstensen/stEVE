@@ -45,6 +45,7 @@ class FromMesh(VesselTree):
         self.scaling_xyz = scaling_xyz or [1.0, 1.0, 1.0]
         self.rotation_yzx_deg = rotation_yzx_deg or [0.0, 0.0, 0.0]
         self.rotate_branches = rotate_branches
+        self.rotate_ip = rotate_ip
 
         temp_mesh_path = get_temp_mesh_path("mesh_from_file")
         mesh = load_mesh(mesh)
