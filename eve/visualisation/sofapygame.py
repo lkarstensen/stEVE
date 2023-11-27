@@ -15,10 +15,12 @@ class SofaPygame(Visualisation):
         intervention: Intervention,
         interim_target: Optional[InterimTarget] = None,
         display_size: Tuple[float, float] = (600, 860),
+        color: Tuple[float, float, float, float] = (0, 0, 0, 0),
     ) -> None:
         self.intervention = intervention
         self.interim_target = interim_target or InterimTargetDummy()
         self.display_size = display_size
+        self.color = color
         simulation = self.intervention.simulation
         simulation.init_visual_nodes = True
         simulation.display_size = display_size
@@ -50,6 +52,7 @@ class SofaPygame(Visualisation):
         self._sofa.Simulation.updateVisual(simulation.root)
         gl = self._opengl_gl
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glClearColor(*self.color)
         gl.glEnable(gl.GL_LIGHTING)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glMatrixMode(gl.GL_PROJECTION)
@@ -102,6 +105,7 @@ class SofaPygame(Visualisation):
 
         gl = self._opengl_gl
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glClearColor(*self.color)
         gl.glEnable(gl.GL_LIGHTING)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LESS)
@@ -145,7 +149,7 @@ class SofaPygame(Visualisation):
         vessel_high = vessel_tree.coordinate_space.high
         vessel_center = (vessel_high + vessel_low) / 2
 
-        if fluoroscopy.image_center != [0,0,0]:
+        if fluoroscopy.image_center != [0, 0, 0]:
             look_at[0] = fluoroscopy.image_center[0]
             look_at[1] = fluoroscopy.image_center[1]
             look_at[2] = fluoroscopy.image_center[2]
@@ -153,7 +157,7 @@ class SofaPygame(Visualisation):
             look_at[0] = vessel_center[0]
             look_at[1] = vessel_center[1]
             look_at[2] = vessel_center[2]
-            
+
         self._initial_look_at = look_at
         self._theta_x = fluoroscopy.image_rot_zx[1] * np.pi / 180
         self._theta_z = fluoroscopy.image_rot_zx[0] * np.pi / 180
