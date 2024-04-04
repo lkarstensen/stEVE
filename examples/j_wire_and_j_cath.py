@@ -17,7 +17,7 @@ device2 = eve.intervention.device.JShaped(
     straight_inner_diameter=1.0,
     color=(1.0, 0.0, 0.0),
 )
-simulation = eve.intervention.simulation.Simulation()
+simulation = eve.intervention.simulation.SofaBeamAdapter()
 
 fluoroscopy = eve.intervention.fluoroscopy.Fluoroscopy(
     simulation=simulation,
