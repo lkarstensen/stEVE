@@ -14,11 +14,11 @@ Framework was tested under Ubuntu, MacOS (Apple Silicone) and Windows, although 
    ```
    # (optional) Activate your python virtual env of choice (needs to work with SOFA)
 
-   python -m pip install -e .
+   python3 -m pip install -e .
    ```
 3. Test the installation
     ```
-    python examples/function_check.py
+    python3 examples/function_check.py
     ```
 
 ## Install SOFA with SofaPython3 and BeamAdapter
