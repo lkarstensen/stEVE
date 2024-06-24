@@ -10,9 +10,9 @@ vessel_tree = eve.intervention.vesseltree.AorticArch()
 device = eve.intervention.device.JShaped(beams_per_mm_straight=0.5)
 device2 = eve.intervention.device.Simmons3Bends()
 
-simulation = eve.intervention.simulation.Simulation()
+simulation = eve.intervention.simulation.SofaBeamAdapter()
 
-fluoroscopy = eve.intervention.fluoroscopy.Fluoroscopy(
+fluoroscopy = eve.intervention.fluoroscopy.TrackingOnly(
     simulation=simulation,
     vessel_tree=vessel_tree,
     image_frequency=7.5,
