@@ -1,4 +1,4 @@
-# dEVE (digital EndoVascular Environment)
+# stEVE (simulated EndoVascular Environment)
 Framework for the creation of simulations of endovascular interventions using the [SOFA simulation framework](https://www.sofa-framework.org) as simulation engine. EVE was designed for reinforcement learning and offers the seamless integration of *state*, *reward*, *terminal*, *truncation* and *info* features as defined by the [Farama gymnasium](https://gymnasium.farama.org) and can therefore be integrated with any RL framework adhering to this standard. Nevertheless, it is possible to use the simulated intervention for other purposes.
 
 During design high priorities were modularity and pythonic way of usage. Resulting in the following architecture. 
@@ -79,7 +79,7 @@ cmake \
 -S ./src \
 -B ./build
 ```
-12.
+13.
     
 ```
 cd build
