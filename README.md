@@ -153,3 +153,8 @@ Provides additional interim targets.
 
 - **Observation, Reward, Truncation, Terminal and Info:**:
 Provide observation, reward, truncation, terminal and info for reinforcement learning according to the gymnasium definition. Offers a modular approach to flexibly combine and augment observations.
+
+## Open Issues (Opportunities to contribute)
+
+- Compatibility to current SOFA and BeamAdapter Versions: The scene definition for endovascular simulations in BeamAdapter has been changed in current versions. eve.intervention.simulation.sofabeamadapter needs updating to new standard.
+- SOFA auto-install: Getting SOFA running can be a bit tricky. [sofa_env](https://github.com/ScheiklP/sofa_env) implements auto-install for binaries which can be applied here as well. 
