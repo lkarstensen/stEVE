@@ -1,7 +1,6 @@
 # pylint: disable=no-member
 
 from time import perf_counter
-import numpy as np
 import eve
 from eve.visualisation import FromImaging
 
