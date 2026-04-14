@@ -77,7 +77,7 @@ class SofaPygame(Visualisation):
         width = camera.widthViewport.value
 
         buffer = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
-        image_array = np.fromstring(buffer, np.uint8)
+        image_array = np.frombuffer(buffer, np.uint8)
 
         if image_array.shape:
             image = image_array.reshape(height, width, 3)
