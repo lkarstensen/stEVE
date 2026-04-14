@@ -5,4 +5,5 @@ from .sofapygame import SofaPygame
 from .fromimaging import FromImaging
 from .fromstate import FromState
 
+from .multivisu import MultiVisualisation
 from .dummy import Dummy as VisualisationDummy
