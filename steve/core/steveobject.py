@@ -1,89 +1,156 @@
+"""Base class for all steve components."""
 from abc import ABC
-from importlib import import_module
-from typing import Dict, Optional
+import inspect
+from typing import Any, TypeVar
 
-from .confighandler import ConfigHandler
+from steve.core.confighandler import ConfigHandler
+from steve.util.logging import get_logger
+
+_logger = get_logger(__name__)
+
+T = TypeVar("T", bound="StEveObject")
 
 
-class EveObject(ABC):
-    def __repr__(self):
+class StEveObject(ABC):
+    """Base class for all steve components.
+
+    Provides a YAML-based serialization contract: every ``__init__``
+    parameter must be stored as a public attribute with the **same name**::
+
+        def __init__(self, friction: float):
+            self.friction = friction   # same name → auto-serialized
+
+    Private attributes (``self._x``) and attributes computed from parameters
+    are never serialized automatically. Override ``to_config`` and optionally
+    ``from_config`` when the naming convention cannot be met.
+    """
+
+    def __repr__(self) -> str:
+        """Return the fully-qualified class name as the string representation."""
         return f"{self.__module__}.{self.__class__.__name__}"
 
-    def save_config(self, file_path: str, eve_classes_only: bool = True):
-        confighandler = ConfigHandler()
-        confighandler.save_config(self, file_path, eve_classes_only)
+    # ------------------------------------------------------------------
+    # Serialization hooks — override these to customise serialization
+    # ------------------------------------------------------------------
 
-    def get_config_dict(self, eve_classes_only: bool = True):
-        confighandler = ConfigHandler()
-        return confighandler.object_to_config_dict(self, eve_classes_only)
+    def to_config(self) -> dict:
+        """Return the constructor kwargs needed to reconstruct this object.
+
+        The default implementation reads every ``__init__`` parameter from
+        the matching public attribute. Override when parameter names differ
+        from attribute names, or when values require a transformation before
+        saving.
+
+        Returns:
+            Mapping of constructor parameter names to their current values.
+        """
+        sig = inspect.signature(self.__init__)
+        params = [
+            name
+            for name, param in sig.parameters.items()
+            if param.kind
+            not in (
+                inspect.Parameter.VAR_POSITIONAL,  # *args
+                inspect.Parameter.VAR_KEYWORD,  # **kwargs
+            )
+        ]
+        return {p: getattr(self, p) for p in params}
 
     @classmethod
-    def from_config_file(cls, config_file: str, to_exchange: Optional[Dict] = None):
-        confighandler = ConfigHandler()
-        config_dict = confighandler.load_config_dict(config_file)
-        return cls.from_config_dict(config_dict, to_exchange)
+    def from_config(cls: type[T], **kwargs: Any) -> T:
+        """Reconstruct this object from config kwargs.
+
+        The default calls ``cls(**kwargs)``. Override when reconstruction
+        requires different logic than the ``__init__`` signature suggests.
+
+        Args:
+            **kwargs: Constructor arguments as returned by ``to_config``.
+
+        Returns:
+            A new instance of this class.
+        """
+        return cls(**kwargs)
+
+    # ------------------------------------------------------------------
+    # Public serialization API — thin delegates to ConfigHandler
+    # ------------------------------------------------------------------
+
+    def save_config(self, file_path: str) -> None:
+        """Save this object's configuration to a YAML file.
+
+        Args:
+            file_path: Destination path. A ``.yml`` extension is appended
+                if not already present.
+
+        Raises:
+            ValueError: If ``file_path`` is empty.
+        """
+        if not file_path:
+            raise ValueError(
+                f"{self.__class__.__name__}.save_config: "
+                "file_path must be a non-empty string"
+            )
+        _logger.debug("Saving config %r → %s", self, file_path)
+        ConfigHandler().save(self, file_path)
+
+    def get_config_dict(self) -> dict:
+        """Return this object's configuration as a nested dictionary.
+
+        Returns:
+            Nested dict suitable for serialization or inspection.
+        """
+        return ConfigHandler().to_dict(self)
 
     @classmethod
-    def from_config_dict(cls, config_dict: Dict, to_exchange: Optional[Dict] = None):
-        to_exchange = to_exchange or {}
-        # check if correct class
-        class_str = config_dict["_class"]
-        module_path, class_name = class_str.rsplit(".", 1)
-        module = import_module(module_path)
-        new_obj_constructor = getattr(module, class_name)
+    def from_config_file(
+        cls: type[T],
+        config_file: str,
+        exchange: dict[type, "StEveObject"] | None = None,
+    ) -> T:
+        """Load and reconstruct an object from a YAML config file.
 
-        if not issubclass(new_obj_constructor, cls):
-            raise ValueError("Config File from wrong class")
-        confighandler = ConfigHandler()
+        Args:
+            config_file: Path to the YAML file produced by ``save_config``.
+            exchange: Optional ``{OldType: replacement}`` mapping passed to
+                ``reconstruct``. See ``ConfigHandler.reconstruct`` for details.
 
-        # get list of objects
-        object_list = confighandler.config_dict_to_list_of_objects(config_dict)
-        eve = import_module("eve")
-        if issubclass(cls, eve.Env):
-            object_list[config_dict["_id"]]["requires"] = []
-        # exchange objects
-        object_registry = {}
-        maybe_no_longer_required = []
-        to_pop = []
+        Returns:
+            The reconstructed object.
 
-        # create object registry of exchanged objects
-        for obj_class_to_exchange, obj in to_exchange.items():
-            for obj_id, obj_dict in object_list.items():
-                if not isinstance(obj_dict, dict):
-                    continue
-                class_str = obj_dict["_class"]
-                module_path, class_name = class_str.rsplit(".", 1)
-                module = import_module(module_path)
-                current_obj = getattr(module, class_name)
-                if issubclass(current_obj, obj_class_to_exchange):
-                    maybe_no_longer_required += object_list[obj_id]["requires"]
-                    to_pop.append(obj_id)
-                    object_registry[obj_id] = obj
-                    object_list[obj_id] = obj
+        Raises:
+            ValueError: If the file's root class is not a subclass of ``cls``.
+        """
+        if not config_file:
+            raise ValueError(
+                f"{cls.__name__}.from_config_file: "
+                "config_file must be a non-empty string"
+            )
+        _logger.debug("Loading %s from %s", cls.__name__, config_file)
+        return ConfigHandler().load(
+            config_file, expected_type=cls, exchange=exchange
+        )
 
-        # find objects which dependencies were removed due to the exchange
-        maybe_no_longer_required = list(set(maybe_no_longer_required))
-        still_required = []
-        for obj_id in maybe_no_longer_required:
-            if obj_id in still_required:
-                continue
-            for obj_dict in object_list.values():
-                if isinstance(obj_dict, dict) and obj_id in obj_dict["requires"]:
-                    still_required.append(obj_id)
-                    continue
+    @classmethod
+    def from_config_dict(
+        cls: type[T],
+        config_dict: dict,
+        exchange: dict[type, "StEveObject"] | None = None,
+    ) -> T:
+        """Reconstruct an object from a config dictionary.
 
-        # remove objects without depenencies from registry
-        for obj_id in maybe_no_longer_required:
-            if not obj_id in still_required:
-                object_list.pop(obj_id)
+        Args:
+            config_dict: Dictionary produced by ``get_config_dict``.
+            exchange: Optional ``{OldType: replacement}`` mapping. Wherever
+                the config references an object of ``OldType``, the
+                replacement is used and now-unused sub-objects are pruned.
 
-        # reduce config dict with only the ids left in reduced_object_registry
-        to_remove = []
-        for entry, obj_dict in config_dict.items():
-            if isinstance(obj_dict, dict) and obj_dict["_id"] not in object_list.keys():
-                to_remove.append(entry)
+        Returns:
+            The reconstructed object.
 
-        for entry in to_remove:
-            config_dict.pop(entry)
-
-        return confighandler.config_dict_to_object(config_dict, object_registry)
+        Raises:
+            ValueError: If the config's root class is not a subclass of ``cls``.
+        """
+        _logger.debug("Reconstructing %s from config dict", cls.__name__)
+        return ConfigHandler().reconstruct(
+            config_dict, expected_type=cls, exchange=exchange
+        )
